@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% block title %}{% if project.name %}Edit{% else %}Create{% endif %} a project — {% endblock %}
+{% block content %}
+<h1>{% if project.name %}Update{% else %}Create{% endif %} a project</h1>
+<form action="{{ url_for('upload_project') }}" method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="pid" value="{{ project.id or '' }}">
+    Short name: <input type="text" name="name" value="{{ project.name or '' }}"><br>
+    Title: <input type="text" size="100" name="title" value="{{ project.title or '' }}"><br>
+    URL: <input type="text" size="100" name="url" value="{{ project.url or '' }}"><br>
+    Description:<br>
+    <textarea name="description" cols="100" rows="10">{{ project.description or '' }}</textarea><br>
+    <br>
+    JSON: <input type="file" name="json"><br>
+    <input type="checkbox" id="validate" name="validate" {% if project.can_validate %}checked="checked"{% endif %}><label for="validate"> Enable validation</label><br>
+    <br>
+    <input type="submit">
+</form>
+{% if project.id %}
+<p><a href="{{ url_for('delete_project', pid=project.id) }}" style="color:red;" onclick="javascript:return confirm('You sure want to delete the project?');">Delete</a></p>
+{% endif %}
+<p><a href="{{ url_for('front') }}">Return</a></p>
+{% endblock %}

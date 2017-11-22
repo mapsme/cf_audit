@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+{% block title %}{{ project.title }} — {% endblock %}
+{% block content %}
+<h1>{{ project.title }}</h1>
+<p>{{ project.description }}</p> <!-- TODO: split by paragraphs -->
+<p><a href="{{ url_for('browse', project=project.name) }}">Browse points</a></p>
+{% if not project.complete and project.can_validate %}
+<p><a href="{{ url_for('tasks', project=project.name) }}">Validate the import</a></p>
+{% endif %}
+{% if admin %}
+<p><a href="{{ url_for('add_project', pid=project.id) }}">Edit</a>,
+<a href="{{ url_for('export_audit', pid=project.id) }}">Download Audit</a></p>
+{% endif %}
+<p><a href="{{ url_for('front') }}">Return</a></p>
+{% endblock %}

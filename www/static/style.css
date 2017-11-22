@@ -1,0 +1,133 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#map1, #map2 {
+  position: fixed;
+  right: 0;
+  left: 350px;
+  height: 50%;
+}
+#map1 {
+  top: 0;
+}
+#map2 {
+  bottom: 0;
+}
+
+#left {
+  width: 350px;
+  padding: 1em 0.5em;
+  font-size: 14px;
+  font-family: sans-serif;
+}
+
+p.toproject {
+  font-size: 12px;
+}
+
+#buttons {
+  position: absolute;
+  bottom: 0;
+  width: 350px;
+}
+
+h1 {
+  font-size: 26px;
+  margin: 0;
+}
+
+#hint {
+  margin-top: 0.5em;
+  font-style: italic;
+  color: green;
+}
+
+#tags {
+  margin: 1em 0;
+  border-collapse: collapse;
+  max-width: 90%;
+}
+
+#tags tr {
+  border: 1px solid lightgrey;
+  border-bottom: none;
+}
+
+#tags tr.lower {
+  border-top: none;
+}
+
+#tags th, tr.lower {
+  border-bottom: 1px solid lightgrey;
+}
+
+#tags th {
+  text-align: left;
+  padding-right: 1em;
+}
+
+#tags .tagedit td {
+  cursor: pointer;
+}
+
+#tags td {
+  padding: 2px 0;
+}
+
+#tags td.red { background-color: pink; }
+#tags td.green { background-color: lightgreen; }
+#tags td.yellow { background-color: yellow; }
+
+#tags .notset {
+  color: lightgrey;
+  font-style: italic;
+}
+
+td input {
+  float: right;
+  height: 1em;
+}
+
+#fixme {
+  width: 90%;
+}
+
+#buttons button {
+  display: inline-block;
+  width: 90%;
+  margin-bottom: 0.5em;
+  border: solid 1px lightgrey;
+  font-size: 26px;
+}
+
+.b_good {
+  background-color: lightgreen;
+  height: 4em;
+}
+
+.b_good:hover, .b_next:hover, .b_readonly:hover {
+  font-weight: bold;
+}
+
+#buttons .b_bad {
+  background-color: white;
+  color: pink;
+  width: 45%;
+}
+
+#buttons .b_bad:hover {
+  color: red;
+}
+
+#buttons .b_next {
+  font-size: 20px;
+}
+
+#buttons .b_zoom {
+  width: 45%;
+  height: 3em;
+  vertical-align: bottom;
+}
