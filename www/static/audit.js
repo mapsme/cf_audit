@@ -164,7 +164,7 @@ function displayPoint(data, audit) {
       coord = data['geometry']['coordinates'],
       props = data['properties'],
       canMove = !readonly && (props['can_move'] || props['action'] == 'create'),
-      refCoord = props['ref_coords'],
+      refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
       wereCoord = props['were_coords'];
 
   feature = data;
