@@ -99,9 +99,9 @@ def project(name):
     return render_template('project.html', project=project, admin=is_admin(get_user()))
 
 
-@app.route('/browse/<project>')
-def browse(project):
-    project = Project.get(Project.name == project)
+@app.route('/browse/<name>')
+def browse(name):
+    project = Project.get(Project.name == name)
     query = Feature.select().where(Feature.project == project)
     features = []
     for f in query:
@@ -109,12 +109,15 @@ def browse(project):
     return render_template('browse.html', project=project, features=features)
 
 
-@app.route('/run/<project>')
-@app.route('/run/<project>/<ref>')
-def tasks(project, ref=None):
-    if 'osm_uid' not in session:
+@app.route('/run/<name>')
+@app.route('/run/<name>/<ref>')
+def tasks(name, ref=None):
+    if not get_user():
         return redirect(url_for('front'))
-    project = Project.get(Project.name == project)
+    project = Project.get(Project.name == name)
+    if not project.can_validate:
+        flash('Project validation is disabled')
+        return redirect(url_for('project', name=name))
     return render_template('task.html', project=project, ref=ref)
 
 
@@ -282,7 +285,7 @@ def all_features(pid):
 def api_feature(pid):
     user = get_user()
     project = Project.get(Project.id == pid)
-    if user and request.method == 'POST':
+    if user and request.method == 'POST' and project.can_validate:
         ref_and_audit = request.get_json()
         if ref_and_audit and len(ref_and_audit) == 2:
             feat = Feature.get(Feature.ref == ref_and_audit[0])
