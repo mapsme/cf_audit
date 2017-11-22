@@ -115,6 +115,7 @@ def tasks(name, ref=None):
     if not get_user():
         return redirect(url_for('front'))
     project = Project.get(Project.name == name)
+    print project.can_validate
     if not project.can_validate:
         flash('Project validation is disabled')
         return redirect(url_for('project', name=name))
@@ -179,8 +180,9 @@ def update_features(project, features):
         q = Feature.delete().where(Feature.ref << deleted)
         q.execute()
     project.bbox = ','.join([str(x) for x in (minlon, minlat, maxlon, maxlat)])
-    project.feature_count = Feature.select().count()
-    project.validated_count = Feature.select().where(Feature.validates_count >= 2).count()
+    project.feature_count = Feature.select().where(Feature.project == project).count()
+    project.validated_count = Feature.select().where(Feature.project == project,
+                                                     Feature.validates_count >= 2).count()
     project.save()
 
 
