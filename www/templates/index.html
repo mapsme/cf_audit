@@ -8,7 +8,7 @@
 <ul>
   {% for proj in projects %}
   {% if not proj.complete %}
-  <li><a href="{{ url_for('project', name=proj.name) }}">{{ proj.title }}</a> ({{ proj.feature_count }})</li>
+  <li><a href="{{ url_for('project', name=proj.name) }}">{{ proj.title }}</a> ({{ proj.validated_count }} / {{ proj.feature_count }})</li>
   {% endif %}
   {% endfor %}
 </ul>
@@ -17,7 +17,7 @@
 <ul>
   {% for proj in projects %}
   {% if proj.complete %}
-  <li><a href="{{ url_for('project', name=proj.name) }}">{{ proj.title }}</a> ({{ proj.feature_count }})</li>
+  <li><a href="{{ url_for('project', name=proj.name) }}">{{ proj.title }}</a> ({{ proj.validated_count }} / {{ proj.feature_count }})</li>
   {% endif %}
   {% endfor %}
 </ul>

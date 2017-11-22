@@ -139,7 +139,7 @@ def update_features(project, features):
     for f in features:
         data = json.dumps(f, ensure_ascii=False, sort_keys=True)
         md5 = hashlib.md5()
-        md5.update(data)
+        md5.update(data.encode('utf-8'))
         md5_hex = md5.hexdigest()
         coord = f['geometry']['coordinates']
         if coord[0] < minlon:
