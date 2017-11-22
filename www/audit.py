@@ -314,5 +314,6 @@ def api_feature(pid):
                     ~fn.EXISTS(task_query)).order_by(fn.Random()).get()
             Task.create(user=user, feature=feature)
         except Feature.DoesNotExist:
-            feature = {'feature': 'null', 'ref': None, 'audit': None}
-    return jsonify(feature=json.loads(feature.feature), ref=feature.ref, audit=feature.audit)
+            return jsonify(feature={}, ref=None, audit=None)
+    return jsonify(feature=json.loads(feature.feature), ref=feature.ref,
+                   audit=json.loads(feature.audit))

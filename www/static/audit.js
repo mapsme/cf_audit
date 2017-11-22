@@ -149,11 +149,17 @@ function querySpecific(ref) {
     method: 'GET',
     dataType: 'json',
     error: function(x,e,h) { window.alert('Ajax error. Please reload the page.\n'+e+'\n'+h); hidePoint(); },
-    success: function(data) { data.feature.ref = data.ref; displayPoint(data.feature, {}); }
+    success: function(data) { data.feature.ref = data.ref; displayPoint(data.feature, data.audit || {}); }
   });
 }
 
 function displayPoint(data, audit) {
+  if (!data.ref) {
+    window.alert('Received an empty feature. You must have validated all of them.');
+    hidePoint();
+    return;
+  }
+
   var movePos = audit['move'], latlon, rlatlon, rIsOSM = false,
       coord = data['geometry']['coordinates'],
       props = data['properties'],
@@ -282,10 +288,8 @@ function displayPoint(data, audit) {
     $('#good').focus();
   }
 
-  if (readonly)
-    $('#fixme').hide();
-  else {
-    $('#fixme').show();
+  if (!readonly) {
+    $('#fixme_box').show();
     $('#fixme').val(audit['fixme'] || '');
   }
 
@@ -401,6 +405,7 @@ function displayPoint(data, audit) {
 function hidePoint() {
   $('#tags').empty();
   $('#hint').hide();
+  $('#fixme_box').hide();
   $('#title').html(defaultTitle);
   if (marker2) {
     map1.removeLayer(marker2);
