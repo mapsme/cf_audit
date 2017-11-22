@@ -103,6 +103,7 @@ $(function() {
     }
   });
   if (readonly) {
+    $('#editthis').hide();
     $('#zoom_out').click(function() {
       hidePoint();
       if (lastView) {
@@ -123,7 +124,10 @@ $(function() {
     $('#bad_dup').click({good: false, msg: 'duplicate'}, submit);
     $('#bad_nosuch').click({good: false, msg: 'no such venue'}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
-    queryNext();
+    if (forceRef)
+      querySpecific(forceRef);
+    else
+      queryNext();
   }
 });
 
@@ -192,8 +196,11 @@ function displayPoint(data, audit) {
   }
 
   // Pan the map and draw a marker
-  if (readonly)
+  if (readonly) {
     lastView = [map1.getCenter(), map1.getZoom()];
+    $('#editlink').attr('href', featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+    $('#editthis').show();
+  }
   $('#hint').show();
   if (rlatlon) {
     var smTitle = rIsOSM ? 'OSM location' : 'External dataset location';

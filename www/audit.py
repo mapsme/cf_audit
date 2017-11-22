@@ -110,11 +110,12 @@ def browse(project):
 
 
 @app.route('/run/<project>')
-def tasks(project):
+@app.route('/run/<project>/<ref>')
+def tasks(project, ref=None):
     if 'osm_uid' not in session:
         return redirect(url_for('front'))
     project = Project.get(Project.name == project)
-    return render_template('task.html', project=project)
+    return render_template('task.html', project=project, ref=ref)
 
 
 @app.route('/newproject')
@@ -300,7 +301,7 @@ def api_feature(pid):
             feat.save()
     fref = request.args.get('ref')
     if fref:
-        feature = Feature.get(Feature.ref == fref)
+        feature = Feature.get(Feature.project == project, Feature.ref == fref)
     elif not user or request.args.get('browse') == '1':
         feature = Feature.select().where(Feature.project == project).order_by(fn.Random()).get()
     else:

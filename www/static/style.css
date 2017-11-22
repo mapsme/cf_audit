@@ -22,14 +22,12 @@ html, body {
   padding: 1em 0.5em;
   font-size: 14px;
   font-family: sans-serif;
-}
-
-p.toproject {
-  font-size: 12px;
+  margin-bottom: 250px;
 }
 
 #buttons {
-  position: absolute;
+  position: fixed;
+  background: white;
   bottom: 0;
   width: 350px;
 }
@@ -93,6 +91,10 @@ td input {
 
 #fixme {
   width: 90%;
+}
+
+p.toproject {
+  font-size: 12px;
 }
 
 #buttons button {
