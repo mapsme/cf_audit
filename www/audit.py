@@ -54,6 +54,8 @@ def front():
 def login():
     if 'osm_token' not in session:
         session['objects'] = request.args.get('objects')
+        if request.args.get('next'):
+            session['next'] = request.args.get('next')
         return openstreetmap.authorize(callback=url_for('oauth'))
     return redirect(url_for('front'))
 
@@ -74,7 +76,13 @@ def oauth():
         User.get(User.uid == uid)
     except User.DoesNotExist:
         User.create(uid=uid)
-    return redirect(url_for('front'))
+
+    if session.get('next'):
+        redir = session['next']
+        del session['next']
+    else:
+        redir = url_for('front')
+    return redirect(redir)
 
 
 @openstreetmap.tokengetter
@@ -113,7 +121,7 @@ def browse(name):
 @app.route('/run/<name>/<ref>')
 def tasks(name, ref=None):
     if not get_user():
-        return redirect(url_for('front'))
+        return redirect(url_for('login', next=request.path))
     project = Project.get(Project.name == name)
     print project.can_validate
     if not project.can_validate:
@@ -321,4 +329,4 @@ def api_feature(pid):
         except Feature.DoesNotExist:
             return jsonify(feature={}, ref=None, audit=None)
     return jsonify(feature=json.loads(feature.feature), ref=feature.ref,
-                   audit=json.loads(feature.audit))
+                   audit=json.loads(feature.audit or 'null'))
