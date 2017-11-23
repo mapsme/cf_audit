@@ -2,7 +2,7 @@
 {% block title %}{{ project.title }} — {% endblock %}
 {% block content %}
 <h1>{{ project.title }}</h1>
-<p>{{ project.description }}</p> <!-- TODO: split by paragraphs -->
+<p class="description">{{ desc | safe }}</p>
 <p><a href="{{ url_for('browse', name=project.name) }}">Browse points</a></p>
 {% if project.validated_count < project.feature_count and project.can_validate %}
 <p><a href="{{ url_for('tasks', name=project.name) }}">Validate the import</a></p>

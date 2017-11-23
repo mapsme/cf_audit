@@ -104,7 +104,8 @@ def logout():
 @app.route('/project/<name>')
 def project(name):
     project = Project.get(Project.name == name)
-    return render_template('project.html', project=project, admin=is_admin(get_user()))
+    desc = project.description.replace('\n', '<br>')
+    return render_template('project.html', project=project, admin=is_admin(get_user()), desc=desc)
 
 
 @app.route('/browse/<name>')
