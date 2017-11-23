@@ -335,7 +335,7 @@ def api_feature(pid):
             task_query = Task.select(Task.id).where(Task.user == user, Task.feature == Feature.id)
             query = Feature.select().where(
                 Feature.project == project, Feature.validates_count < 2).where(
-                    ~fn.EXISTS(task_query)).order_by(fn.Random())
+                    ~fn.EXISTS(task_query)).order_by(fn.Rand())
             if user.bboxes:
                 bboxes = BBoxes(user)
                 feature = None
