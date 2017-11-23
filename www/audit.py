@@ -309,8 +309,8 @@ def all_features(pid):
     features = []
     for f in query:
         features.append([f.ref, [f.lat/1e7, f.lon/1e7], f.action])
-    return app.response_class('features = {}'.format(json.dumps(features, ensure_ascii=False)),
-                              mimetype='application/javascript')
+    return app.response_class('features = {}'.format(json.dumps(
+        features, ensure_ascii=False).encode('utf-8')), mimetype='application/javascript')
 
 
 class BBoxes(object):
