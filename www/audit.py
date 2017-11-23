@@ -334,10 +334,15 @@ def api_feature(pid):
                 new_audit = json.dumps(ref_and_audit[1], sort_keys=True, ensure_ascii=False)
             else:
                 new_audit = None
+            user_did_it = Task.select(Task.id).where(
+                Task.user == user, Task.feature == feat).count() > 0
             if feat.audit != new_audit:
                 feat.audit = new_audit
+                if feat.validates_count >= 2:
+                    project.validated_count -= 1
+                    project.save()
                 feat.validates_count = 1
-            else:
+            elif not user_did_it:
                 feat.validates_count += 1
                 if feat.validates_count == 2:
                     project.validated_count += 1
