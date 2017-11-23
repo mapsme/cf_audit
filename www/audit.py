@@ -329,7 +329,7 @@ def api_feature(pid):
     if user and request.method == 'POST' and project.can_validate:
         ref_and_audit = request.get_json()
         if ref_and_audit and len(ref_and_audit) == 2:
-            feat = Feature.get(Feature.ref == ref_and_audit[0])
+            feat = Feature.get(Feature.project == project, Feature.ref == ref_and_audit[0])
             user_did_it = Task.select(Task.id).where(
                 Task.user == user, Task.feature == feat).count() > 0
             Task.create(user=user, feature=feat)
