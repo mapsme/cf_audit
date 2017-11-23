@@ -167,6 +167,15 @@ function displayPoint(data, audit) {
       refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
       wereCoord = props['were_coords'];
 
+  var $good = $('#good');
+  $good.text('Good');
+  function setChangedFast() {
+    $good.text('Record changes');
+  }
+  function setChanged() {
+    $good.text($.isEmptyObject(prepareAudit()) ? 'Good' : 'Record changes');
+  }
+
   feature = data;
   if (!movePos || !refCoord || movePos == 'osm') {
     if (movePos == 'osm' && wereCoord)
@@ -243,9 +252,11 @@ function displayPoint(data, audit) {
       });
       marker1.on('dragend', function() {
         map1.panTo(marker1.getLatLng());
+        setChanged();
       });
       marker2.on('dragend', function() {
         map1.panTo(marker2.getLatLng());
+        setChanged();
       });
     } else {
       $('#canmove').hide();
@@ -291,6 +302,7 @@ function displayPoint(data, audit) {
   if (!readonly) {
     $('#fixme_box').show();
     $('#fixme').val(audit['fixme'] || '');
+    $('#fixme').on('input', setChangedFast);
   }
 
   // Table of tags. First record the original values for unused tags
@@ -397,6 +409,7 @@ function displayPoint(data, audit) {
         rowidx_to_td[idx][3-which].children('input').prop('checked', false);
         rowidx_to_td[idx][3-which].removeClass(cellColor(row, 3-which));
         keys[idx][4] = which == 2;
+        setChanged();
       });
     }
   });
@@ -421,7 +434,7 @@ function hidePoint() {
   }
 }
 
-function submit(e) {
+function prepareAudit(data) {
   var fixme = $('#fixme').val(),
       audit = {},
       maxd = 3, // max distance to register change in meters
@@ -472,12 +485,17 @@ function submit(e) {
     audit['fixme'] = fixme;
 
   // Record good/bad and comment
-  if (!e.data.good) {
+  if (data && !data.good) {
     audit['skip'] = true;
-    audit['comment'] = e.data.msg;
+    audit['comment'] = data.msg;
   }
 
+  return audit;
+}
+
+function submit(e) {
   // Send audit result and query the next feature
+  var audit = prepareAudit(e.data);
   $('#buttons button').each(function() { $(this).prop('disabled', true); });
   queryNext(e.data.msg == 'skip' ? null : [feature.ref, audit]);
 }

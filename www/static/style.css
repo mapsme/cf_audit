@@ -84,6 +84,8 @@ h1 {
   font-style: italic;
 }
 
+#tags td.red .notset { color: grey; }
+
 td input {
   float: right;
   height: 1em;
