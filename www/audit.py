@@ -343,22 +343,23 @@ def api_feature(pid):
             user_did_it = Task.select(Task.id).where(
                 Task.user == user, Task.feature == feat).count() > 0
             Task.create(user=user, feature=feat)
-            if len(ref_and_audit[1]):
-                new_audit = json.dumps(ref_and_audit[1], sort_keys=True, ensure_ascii=False)
-            else:
-                new_audit = None
-            if feat.audit != new_audit:
-                feat.audit = new_audit
-                if feat.validates_count >= 2:
-                    project.validated_count -= 1
-                    project.save()
-                feat.validates_count = 1
-            elif not user_did_it:
-                feat.validates_count += 1
-                if feat.validates_count == 2:
-                    project.validated_count += 1
-                    project.save()
-            feat.save()
+            if ref_and_audit[1] is not None:
+                if len(ref_and_audit[1]):
+                    new_audit = json.dumps(ref_and_audit[1], sort_keys=True, ensure_ascii=False)
+                else:
+                    new_audit = None
+                if feat.audit != new_audit:
+                    feat.audit = new_audit
+                    if feat.validates_count >= 2:
+                        project.validated_count -= 1
+                        project.save()
+                    feat.validates_count = 1
+                elif not user_did_it:
+                    feat.validates_count += 1
+                    if feat.validates_count == 2:
+                        project.validated_count += 1
+                        project.save()
+                feat.save()
     fref = request.args.get('ref')
     if fref:
         feature = Feature.get(Feature.project == project, Feature.ref == fref)

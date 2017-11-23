@@ -497,5 +497,5 @@ function submit(e) {
   // Send audit result and query the next feature
   var audit = prepareAudit(e.data);
   $('#buttons button').each(function() { $(this).prop('disabled', true); });
-  queryNext(e.data.msg == 'skip' ? null : [feature.ref, audit]);
+  queryNext([feature.ref, e.data.msg == 'skip' ? null : audit]);
 }
