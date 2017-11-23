@@ -328,7 +328,7 @@ def api_feature(pid):
     if fref:
         feature = Feature.get(Feature.project == project, Feature.ref == fref)
     elif not user or request.args.get('browse') == '1':
-        feature = Feature.select().where(Feature.project == project).order_by(fn.Random()).get()
+        feature = Feature.select().where(Feature.project == project).order_by(fn.Rand()).get()
     else:
         try:
             # Maybe use a join: https://stackoverflow.com/a/35927141/1297601
