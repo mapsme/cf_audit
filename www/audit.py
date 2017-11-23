@@ -34,7 +34,14 @@ def teardown(exception):
 
 def get_user():
     if 'osm_uid' in session:
-        return User.get(User.uid == session['osm_uid'])
+        try:
+            return User.get(User.uid == session['osm_uid'])
+        except User.DoesNotExist:
+            # Logging user out
+            if 'osm_token' in session:
+                del session['osm_token']
+            if 'osm_uid' in session:
+                del session['osm_uid']
     return None
 
 
