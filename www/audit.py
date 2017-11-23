@@ -105,7 +105,10 @@ def logout():
 def project(name):
     project = Project.get(Project.name == name)
     desc = project.description.replace('\n', '<br>')
-    return render_template('project.html', project=project, admin=is_admin(get_user()), desc=desc)
+    val1 = Feature.select(Feature.id).where(Feature.project == project,
+                                            Feature.validates_count > 0).count()
+    return render_template('project.html', project=project, admin=is_admin(get_user()),
+                           desc=desc, val1=val1)
 
 
 @app.route('/browse/<name>')

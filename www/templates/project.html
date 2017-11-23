@@ -3,6 +3,7 @@
 {% block content %}
 <h1>{{ project.title }}</h1>
 <p class="description">{{ desc | safe }}</p>
+{% if project.url %}<p><a href="{{ project.url }}">Additinal info</a></p>{% endif %}
 <p><a href="{{ url_for('browse', name=project.name) }}">Browse points</a></p>
 {% if project.validated_count < project.feature_count and project.can_validate %}
 <p><a href="{{ url_for('tasks', name=project.name) }}">Validate the import</a></p>
@@ -11,5 +12,6 @@
 <p><a href="{{ url_for('add_project', pid=project.id) }}">Edit</a>,
 <a href="{{ url_for('export_audit', pid=project.id) }}">Download Audit</a></p>
 {% endif %}
+<p>Total features: {{ project.feature_count }}, features looked at: {{ val1 }}, validated: {{ project.validated_count }}</p>
 <p><a href="{{ url_for('front') }}">Return</a></p>
 {% endblock %}
