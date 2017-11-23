@@ -182,7 +182,11 @@ function displayPoint(data, audit) {
       latlon = L.latLng(wereCoord[1], wereCoord[0]);
     else
       latlon = L.latLng(coord[1], coord[0]);
-    rlatlon = refCoord ? L.latLng(refCoord[1], refCoord[0]) : null;
+    if (wereCoord && movePos != 'osm') {
+      rlatlon = L.latLng(wereCoord[1], wereCoord[0]);
+      rIsOSM = true;
+    } else
+      rlatlon = refCoord ? L.latLng(refCoord[1], refCoord[0]) : null;
   } else if (movePos == 'dataset' && refCoord) {
     latlon = L.latLng(refCoord[1], refCoord[0]);
     rlatlon = wereCoord ? L.latLng(wereCoord[1], wereCoord[0]) : null;
