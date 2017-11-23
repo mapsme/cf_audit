@@ -305,7 +305,7 @@ function displayPoint(data, audit) {
   for (var key in props) {
     if (key.startsWith('tags') || key.startsWith('ref_unused_tags')) {
       k = key.substr(key.indexOf('.')+1);
-      if ((k == 'source' || k.startsWith('ref') || k == 'fixme') && !key.startsWith('ref_unused')) {
+      if (!readonly && (k == 'source' || k.startsWith('ref') || k == 'fixme') && !key.startsWith('ref_unused')) {
         if (k == 'fixme')
           $('#fixme').val(props[key]);
         keys.push([k, props[key]]);
