@@ -121,8 +121,7 @@ $(function() {
   } else {
     $('#good').click({good: true}, submit);
     $('#bad').click({good: false, msg: ''}, submit);
-    $('#bad_dup').click({good: false, msg: 'duplicate'}, submit);
-    $('#bad_nosuch').click({good: false, msg: 'wrong'}, submit);
+    $('#bad_dup').click({good: false, msg: ''}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
     if (forceRef)
       querySpecific(forceRef);
@@ -491,7 +490,8 @@ function prepareAudit(data) {
   // Record good/bad and comment
   if (data && !data.good) {
     audit['skip'] = true;
-    audit['comment'] = data.msg;
+    if (data.msg)
+      audit['comment'] = data.msg;
   }
 
   return audit;

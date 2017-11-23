@@ -104,12 +104,13 @@ p.toproject {
   width: 90%;
   margin-bottom: 0.5em;
   border: solid 1px lightgrey;
-  font-size: 26px;
+  font-size: 20px;
 }
 
-.b_good {
+#buttons .b_good {
   background-color: lightgreen;
   height: 4em;
+  font-size: 26px;
 }
 
 .b_good:hover, .b_next:hover, .b_readonly:hover {
@@ -119,15 +120,10 @@ p.toproject {
 #buttons .b_bad {
   background-color: white;
   color: pink;
-  width: 45%;
 }
 
 #buttons .b_bad:hover {
   color: red;
-}
-
-#buttons .b_next {
-  font-size: 20px;
 }
 
 #buttons .b_zoom {
