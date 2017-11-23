@@ -122,7 +122,7 @@ $(function() {
     $('#good').click({good: true}, submit);
     $('#bad').click({good: false, msg: ''}, submit);
     $('#bad_dup').click({good: false, msg: 'duplicate'}, submit);
-    $('#bad_nosuch').click({good: false, msg: 'no such venue'}, submit);
+    $('#bad_nosuch').click({good: false, msg: 'wrong'}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
     if (forceRef)
       querySpecific(forceRef);
