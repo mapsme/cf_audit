@@ -164,7 +164,7 @@ function displayPoint(data, audit) {
       coord = data['geometry']['coordinates'],
       props = data['properties'],
       canMove = !readonly && (props['can_move'] || props['action'] == 'create'),
-      refCoord = props['ref_coords'],
+      refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
       wereCoord = props['were_coords'];
 
   feature = data;
@@ -181,7 +181,7 @@ function displayPoint(data, audit) {
   } else if (movePos.length == 2) {
     latlon = L.latLng(movePos[1], movePos[0]);
     rlatlon = L.latLng(coord[1], coord[0]);
-    rIsOSM = !wereCoord;
+    rIsOSM = !wereCoord && props['action'] != 'create';
   }
 
   if (marker1) {
