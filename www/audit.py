@@ -1,5 +1,5 @@
 from www import app
-from db import database, User, Feature, Project, Task
+from db import database, User, Feature, Project, Task, BBoxes
 from flask import session, url_for, redirect, request, render_template, flash, jsonify
 from flask_oauthlib.client import OAuth
 from peewee import fn
@@ -275,6 +275,17 @@ def export_audit(pid):
         headers={'Content-Disposition': 'attachment;filename=audit_{}.json'.format(project.name)})
 
 
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    user = get_user()
+    if not user:
+        return redirect(url_for('login', next=request.path))
+    if request.method == 'POST':
+        user.bboxes = request.form['bboxes']
+        user.save()
+    return render_template('profile.html', user=user)
+
+
 @app.route('/api')
 def api():
     return 'API Endpoint'
@@ -319,12 +330,24 @@ def api_feature(pid):
         feature = Feature.select().where(Feature.project == project).order_by(fn.Random()).get()
     else:
         try:
-            # TODO: Select features inside user's bboxes first
             # Maybe use a join: https://stackoverflow.com/a/35927141/1297601
             task_query = Task.select(Task.id).where(Task.user == user, Task.feature == Feature.id)
-            feature = Feature.select().where(
+            query = Feature.select().where(
                 Feature.project == project, Feature.validates_count < 2).where(
-                    ~fn.EXISTS(task_query)).order_by(fn.Random()).get()
+                    ~fn.EXISTS(task_query)).order_by(fn.Random())
+            if user.bboxes:
+                bboxes = BBoxes(user)
+                feature = None
+                for f in query:
+                    if bboxes.contains(f.lat/1e7, f.lon/1e7):
+                        feature = f
+                        break
+                    elif not feature:
+                        feature = f
+                if not feature:
+                    raise Feature.DoesNotExist()
+            else:
+                feature = query.get()
             Task.create(user=user, feature=feature)
         except Feature.DoesNotExist:
             return jsonify(feature={}, ref=None, audit=None)

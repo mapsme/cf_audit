@@ -214,7 +214,7 @@ function displayPoint(data, audit) {
     smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
     $('#tr_which').text(rIsOSM ? 'OSM' : 'external');
     $('#transparent').show();
-    map1.fitBounds([latlon, rlatlon], {maxZoom: 18, animate: true});
+    map1.fitBounds([latlon, rlatlon], {maxZoom: 18});
   } else {
     $('#transparent').hide();
     map1.setView(latlon, 18);

@@ -13,6 +13,25 @@ class BaseModel(Model):
         database = database
 
 
+class BBoxes(object):
+    def __init__(self, user):
+        self.bboxes = []
+        if user.bboxes:
+            for bbox in user.bboxes.split(';'):
+                self.bboxes.append([float(x.strip()) for x in bbox.split(',')])
+
+    def update(self, user):
+        if not self.bboxes:
+            user.bboxes = None
+        user.bboxes = ';'.join([','.join(x) for x in self.bboxes])
+
+    def contains(self, lat, lon):
+        for bbox in self.bboxes:
+            if bbox[0] <= lat <= bbox[2] and bbox[1] <= lon <= bbox[3]:
+                return True
+        return False
+
+
 class Project(BaseModel):
     name = CharField(max_length=32, index=True, unique=True)
     title = CharField(max_length=250)

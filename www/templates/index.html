@@ -24,5 +24,7 @@
 {% endif %}
 {% if not user %}
 <p><a href="{{ url_for('login') }}">Login to validate imports</a></p>
+{% else %}
+<p><a href="{{ url_for('profile') }}">Your profile</a></p>
 {% endif %}
 {% endblock %}
