@@ -442,7 +442,7 @@ function prepareAudit(data) {
       osmCoord = feature['properties']['were_coords'],
       dataCoord = feature['properties']['ref_coords'],
       newCoordTmp = marker1.getLatLng(),
-      newCoord = [newCoordTmp.lng, newCoordTmp.lat];
+      newCoord = [L.Util.formatNum(newCoordTmp.lng, 7), L.Util.formatNum(newCoordTmp.lat, 7)];
 
   // Record movement
   function distance(c1, c2) {
