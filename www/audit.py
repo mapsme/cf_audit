@@ -330,12 +330,13 @@ def api_feature(pid):
         ref_and_audit = request.get_json()
         if ref_and_audit and len(ref_and_audit) == 2:
             feat = Feature.get(Feature.ref == ref_and_audit[0])
+            user_did_it = Task.select(Task.id).where(
+                Task.user == user, Task.feature == feat).count() > 0
+            Task.create(user=user, feature=feat)
             if len(ref_and_audit[1]):
                 new_audit = json.dumps(ref_and_audit[1], sort_keys=True, ensure_ascii=False)
             else:
                 new_audit = None
-            user_did_it = Task.select(Task.id).where(
-                Task.user == user, Task.feature == feat).count() > 0
             if feat.audit != new_audit:
                 feat.audit = new_audit
                 if feat.validates_count >= 2:
@@ -373,7 +374,6 @@ def api_feature(pid):
                     raise Feature.DoesNotExist()
             else:
                 feature = query.get()
-            Task.create(user=user, feature=feature)
         except Feature.DoesNotExist:
             return jsonify(feature={}, ref=None, audit=None)
     return jsonify(feature=json.loads(feature.feature), ref=feature.ref,
