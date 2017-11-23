@@ -1,5 +1,5 @@
 from www import app
-from db import database, User, Feature, Project, Task, BBoxes
+from db import database, User, Feature, Project, Task, fn_Random
 from flask import session, url_for, redirect, request, render_template, flash, jsonify
 from flask_oauthlib.client import OAuth
 from peewee import fn
@@ -303,6 +303,25 @@ def all_features(pid):
                               mimetype='application/javascript')
 
 
+class BBoxes(object):
+    def __init__(self, user):
+        self.bboxes = []
+        if user.bboxes:
+            for bbox in user.bboxes.split(';'):
+                self.bboxes.append([float(x.strip()) for x in bbox.split(',')])
+
+    def update(self, user):
+        if not self.bboxes:
+            user.bboxes = None
+        user.bboxes = ';'.join([','.join(x) for x in self.bboxes])
+
+    def contains(self, lat, lon):
+        for bbox in self.bboxes:
+            if bbox[0] <= lat <= bbox[2] and bbox[1] <= lon <= bbox[3]:
+                return True
+        return False
+
+
 @app.route('/api/feature/<int:pid>', methods=['GET', 'POST'])
 def api_feature(pid):
     user = get_user()
@@ -328,14 +347,14 @@ def api_feature(pid):
     if fref:
         feature = Feature.get(Feature.project == project, Feature.ref == fref)
     elif not user or request.args.get('browse') == '1':
-        feature = Feature.select().where(Feature.project == project).order_by(fn.Rand()).get()
+        feature = Feature.select().where(Feature.project == project).order_by(fn_Random()).get()
     else:
         try:
             # Maybe use a join: https://stackoverflow.com/a/35927141/1297601
             task_query = Task.select(Task.id).where(Task.user == user, Task.feature == Feature.id)
             query = Feature.select().where(
                 Feature.project == project, Feature.validates_count < 2).where(
-                    ~fn.EXISTS(task_query)).order_by(fn.Rand())
+                    ~fn.EXISTS(task_query)).order_by(fn_Random())
             if user.bboxes:
                 bboxes = BBoxes(user)
                 feature = None

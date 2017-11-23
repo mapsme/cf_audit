@@ -1,35 +1,20 @@
 from peewee import (
-    Model, CharField, IntegerField, ForeignKeyField,
+    fn, Model, CharField, IntegerField, ForeignKeyField,
     TextField, FixedCharField, BooleanField, DateField
 )
 from playhouse.db_url import connect
 import config
 
 database = connect(config.DATABASE_URI)
+if 'mysql' in config.DATABASE_URI:
+    fn_Random = fn.Rand
+else:
+    fn_Random = fn.Random
 
 
 class BaseModel(Model):
     class Meta:
         database = database
-
-
-class BBoxes(object):
-    def __init__(self, user):
-        self.bboxes = []
-        if user.bboxes:
-            for bbox in user.bboxes.split(';'):
-                self.bboxes.append([float(x.strip()) for x in bbox.split(',')])
-
-    def update(self, user):
-        if not self.bboxes:
-            user.bboxes = None
-        user.bboxes = ';'.join([','.join(x) for x in self.bboxes])
-
-    def contains(self, lat, lon):
-        for bbox in self.bboxes:
-            if bbox[0] <= lat <= bbox[2] and bbox[1] <= lon <= bbox[3]:
-                return True
-        return False
 
 
 class Project(BaseModel):
