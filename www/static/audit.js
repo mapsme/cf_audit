@@ -217,7 +217,7 @@ function displayPoint(data, audit) {
     $('#editthis').show();
   }
   $('#hint').show();
-  if (rlatlon) {
+  if (rlatlon && props['action'] != 'create') {
     var smTitle = rIsOSM ? 'OSM location' : 'External dataset location';
     smarker1 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map1);
     smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
