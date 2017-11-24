@@ -23,6 +23,7 @@ html, body {
   font-size: 14px;
   font-family: sans-serif;
   margin-bottom: 250px;
+  line-height: 1;
 }
 
 #buttons {
