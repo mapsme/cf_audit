@@ -224,7 +224,7 @@ function displayPoint(data, audit) {
     var smTitle = rIsOSM ? 'OSM location' : 'External dataset location';
     smarker1 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map1);
     smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
-    $('#tr_which').text(rIsOSM ? 'OSM' : 'external');
+    $('#tr_which').text(rIsOSM ? 'OpenStreetMap' : 'external dataset');
     $('#transparent').show();
     map1.fitBounds([latlon, rlatlon], {maxZoom: 18});
   } else {
