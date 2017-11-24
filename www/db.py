@@ -23,7 +23,6 @@ class Project(BaseModel):
     description = TextField()
     url = CharField(max_length=1000, null=True)
     feature_count = IntegerField()
-    validated_count = IntegerField()
     can_validate = BooleanField()
     bbox = CharField(max_length=60)
     updated = DateField()

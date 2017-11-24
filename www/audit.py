@@ -114,8 +114,12 @@ def project(name):
     desc = project.description.replace('\n', '<br>')
     val1 = Feature.select(Feature.id).where(Feature.project == project,
                                             Feature.validates_count > 0).count()
+    val2 = Feature.select(Feature.id).where(Feature.project == project,
+                                            Feature.validates_count >= 2).count()
+    corrected = Feature.select(Feature.id).where(
+        Feature.project == project, Feature.audit.is_null(False), Feature.audit != '').count()
     return render_template('project.html', project=project, admin=is_admin(get_user()),
-                           desc=desc, val1=val1)
+                           desc=desc, val1=val1, val2=val2, corrected=corrected)
 
 
 @app.route('/browse/<name>')
@@ -200,8 +204,6 @@ def update_features(project, features):
         q.execute()
     project.bbox = ','.join([str(x) for x in (minlon, minlat, maxlon, maxlat)])
     project.feature_count = Feature.select().where(Feature.project == project).count()
-    project.validated_count = Feature.select().where(Feature.project == project,
-                                                     Feature.validates_count >= 2).count()
     project.save()
 
 
@@ -221,7 +223,6 @@ def upload_project():
         pid = None
         project = Project()
         project.feature_count = 0
-        project.validated_count = 0
         project.bbox = ''
     project.name = request.form['name'].strip()
     if not project.name:
@@ -350,15 +351,9 @@ def api_feature(pid):
                     new_audit = None
                 if feat.audit != new_audit:
                     feat.audit = new_audit
-                    if feat.validates_count >= 2:
-                        project.validated_count -= 1
-                        project.save()
                     feat.validates_count = 1
                 elif not user_did_it:
                     feat.validates_count += 1
-                    if feat.validates_count == 2:
-                        project.validated_count += 1
-                        project.save()
                 feat.save()
     fref = request.args.get('ref')
     if fref:
