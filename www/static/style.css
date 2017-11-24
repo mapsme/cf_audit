@@ -19,7 +19,7 @@ html, body {
 
 #left {
   width: 350px;
-  padding: 1em 0.5em;
+  padding: 0.5em;
   font-size: 14px;
   font-family: sans-serif;
   margin-bottom: 250px;
@@ -32,9 +32,13 @@ html, body {
   width: 350px;
 }
 
+p.toproject {
+  font-size: 12px;
+  margin: 0;
+}
+
 h1 {
   font-size: 26px;
-  margin: 0;
 }
 
 #hint {
@@ -95,16 +99,12 @@ td input {
   width: 90%;
 }
 
-p.toproject {
-  font-size: 12px;
-}
-
 #buttons button {
   display: inline-block;
-  width: 90%;
+  width: 95%;
   margin-bottom: 0.5em;
   border: solid 1px lightgrey;
-  font-size: 20px;
+  font-size: 26px;
 }
 
 #buttons .b_good {
@@ -127,7 +127,7 @@ p.toproject {
 }
 
 #buttons .b_zoom {
-  width: 45%;
+  width: 47%;
   height: 3em;
   vertical-align: bottom;
 }

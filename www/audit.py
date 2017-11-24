@@ -118,8 +118,11 @@ def project(name):
                                             Feature.validates_count >= 2).count()
     corrected = Feature.select(Feature.id).where(
         Feature.project == project, Feature.audit.is_null(False), Feature.audit != '').count()
+    skipped = Feature.select(Feature.id).where(
+        Feature.project == project, Feature.audit.contains('"skip": true')).count()
     return render_template('project.html', project=project, admin=is_admin(get_user()),
-                           desc=desc, val1=val1, val2=val2, corrected=corrected)
+                           desc=desc, val1=val1, val2=val2, corrected=corrected,
+                           skipped=skipped)
 
 
 @app.route('/browse/<name>')

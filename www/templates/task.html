@@ -18,6 +18,7 @@
 {% endblock %}
 {% block content %}
     <div id="left">
+      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a></p>
       <h1 id="title">{{ project.title }}</h1>
       <p id="hint">
         <span id="canmove">You can move the marker to a better location. Imagery may be misaligned.</span>
@@ -29,7 +30,6 @@
         <p>Add a fixme tag if needed:<br>
         <input type="text" id="fixme"></p>
       </div>
-      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a></p>
       <div id="buttons">
         <button id="good" class="b_good">Good</button>
         <button id="bad" class="b_bad">This is wrong</button>
