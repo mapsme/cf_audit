@@ -1,5 +1,29 @@
 {% extends "layout.html" %}
 {% block title %}{{ project.title }} — {% endblock %}
+{% block header %}
+<style>
+#progress {
+  width: 300px;
+  height: 1em;
+  border: 1px lightgrey solid;
+}
+
+#progress span {
+  height: 100%;
+  display: inline-block;
+}
+
+#p_val2 {
+  background-color: #52be80;
+  width: {{ (300 * val2 / project.feature_count) | round(1) }}px;
+}
+
+#p_val1 {
+  background-color: #f7dc6f;
+  width: {{ (300 * (val1 - val2) / project.feature_count) | round(1) }}px;
+}
+</style>
+{% endblock %}
 {% block content %}
 <h1>{{ project.title }}</h1>
 <p class="description">{{ desc | safe }}</p>
@@ -12,6 +36,7 @@
 <p><a href="{{ url_for('add_project', pid=project.id) }}">Edit</a>,
 <a href="{{ url_for('export_audit', pid=project.id) }}">Download Audit</a></p>
 {% endif %}
+<div id="progress"><span id="p_val2"></span><span id="p_val1"></span></div>
 <ul>
     <li>Total features: {{ project.feature_count }}</li>
     <li>Features looked at: {{ val1 }}</li>
