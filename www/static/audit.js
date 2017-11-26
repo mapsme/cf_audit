@@ -231,10 +231,18 @@ function displayPoint(data, audit) {
     $('#transparent').hide();
     map1.setView(latlon, 18);
   }
-  var mTitle = rIsOSM ? 'New location after moving' : 'OSM object location';
-  marker2 = L.marker(latlon, {draggable: canMove, title: mTitle}).addTo(map2);
+  var mTitle = rIsOSM ? 'New location after moving' : 'OSM object location',
+      iconGreen = new L.Icon({
+        iconUrl: imagesPath + '/marker-green.png',
+        shadowUrl: imagesPath + '/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        shadowSize: [41, 41]
+      }),
+      mIcon = canMove ? iconGreen : new L.Icon.Default();
+  marker2 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map2);
   if (!readonly) {
-    marker1 = L.marker(latlon, {draggable: canMove, title: mTitle}).addTo(map1);
+    marker1 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map1);
 
     if (canMove) {
       $('#canmove').show();

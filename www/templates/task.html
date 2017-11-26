@@ -12,6 +12,7 @@
       endpoint = '{{ url_for('api') }}';
       projectId = {{ project.id }};
       forceRef = {% if ref %}'{{ ref }}'{% else %}null{% endif %};
+      imagesPath = '{{ url_for('static', filename='images') }}';
       readonly = false;
     </script>
     <script src="{{ url_for('static', filename='audit.js') }}"></script>
