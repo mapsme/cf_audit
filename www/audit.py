@@ -219,7 +219,7 @@ def table(name, page):
                 columns.add(k)
                 tag['before'] = ''
                 tag['after'] = v
-                tag['accepted'] = not audit or k not in audit.get('keep')
+                tag['accepted'] = not audit or k not in audit.get('keep', [])
                 tag['action'] = data['properties']['action']
             else:
                 if p.startswith('tags.'):
