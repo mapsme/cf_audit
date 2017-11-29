@@ -79,5 +79,10 @@ OSM: {{ row.tags[col].before }}">{% if not row.tags[col].accepted %}<s>{% endif 
     <li><span class="v_changed">●</span> Changed</li>
     <li><span class="v_deleted">●</span> Deleted</li>
 </ul>
+{% if show_validated %}
+<p><a href="{{ url_for('table', name=project.name) }}">Hide validated objects</a></p>
+{% else %}
+<p><a href="{{ url_for('table', name=project.name, all=1) }}">Include validated objects in the list</a></p>
+{% endif %}
 <p><a href="{{ url_for('project', name=project.name) }}">Return</a></p>
 {% endblock %}

@@ -182,6 +182,9 @@ class Pagination(object):
 def url_for_other_page(page):
     args = request.view_args.copy()
     args['page'] = page
+    show_validated = request.args.get('all') == '1'
+    if show_validated:
+        args['all'] = '1'
     return url_for(request.endpoint, **args)
 app.jinja_env.globals['url_for_other_page'] = url_for_other_page
 
@@ -193,7 +196,8 @@ def table(name, page):
     project = Project.get(Project.name == name)
     query = Feature.select().where(Feature.project == project).order_by(
         Feature.id).paginate(page, PER_PAGE)
-    if request.args.get('all') != '1':
+    show_validated = request.args.get('all') == '1'
+    if not show_validated:
         query = query.where(Feature.validates_count < 2)
     pagination = Pagination(page, PER_PAGE, query.count(True))
     columns = set()
@@ -250,7 +254,8 @@ def table(name, page):
         features.append(f)
 
     return render_template('table.html', project=project, pagination=pagination,
-                           columns=sorted(columns), rows=features)
+                           columns=sorted(columns), rows=features,
+                           show_validated=show_validated)
 
 
 @app.route('/newproject')
