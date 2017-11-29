@@ -8,6 +8,7 @@ import config
 import codecs
 import datetime
 import hashlib
+import math
 
 oauth = OAuth()
 openstreetmap = oauth.remote_app(
@@ -126,13 +127,14 @@ def project(name):
 
 
 @app.route('/browse/<name>')
-def browse(name):
+@app.route('/browse/<name>/<ref>')
+def browse(name, ref=None):
     project = Project.get(Project.name == name)
     query = Feature.select().where(Feature.project == project)
     features = []
     for f in query:
         features.append([f.ref, f.lon, f.lat, f.action])
-    return render_template('browse.html', project=project, features=features)
+    return render_template('browse.html', project=project, features=features, ref=ref)
 
 
 @app.route('/run/<name>')
@@ -141,11 +143,114 @@ def tasks(name, ref=None):
     if not get_user():
         return redirect(url_for('login', next=request.path))
     project = Project.get(Project.name == name)
-    print project.can_validate
     if not project.can_validate:
         flash('Project validation is disabled')
         return redirect(url_for('project', name=name))
     return render_template('task.html', project=project, ref=ref)
+
+
+# Lifted from http://flask.pocoo.org/snippets/44/
+class Pagination(object):
+    def __init__(self, page, per_page, total_count):
+        self.page = page
+        self.per_page = per_page
+        self.total_count = total_count
+
+    @property
+    def pages(self):
+        return int(math.ceil(self.total_count / float(self.per_page)))
+
+    @property
+    def has_prev(self):
+        return self.page > 1
+
+    @property
+    def has_next(self):
+        return self.page < self.pages
+
+    def iter_pages(self, left_edge=2, left_current=2, right_current=5, right_edge=2):
+        last = 0
+        for num in xrange(1, self.pages + 1):
+            if (num <= left_edge or num > self.pages - right_edge or
+                    (num > self.page - left_current - 1 and num < self.page + right_current)):
+                if last + 1 != num:
+                    yield None
+                yield num
+                last = num
+
+
+def url_for_other_page(page):
+    args = request.view_args.copy()
+    args['page'] = page
+    return url_for(request.endpoint, **args)
+app.jinja_env.globals['url_for_other_page'] = url_for_other_page
+
+
+@app.route('/table/<name>', defaults={'page': 1})
+@app.route('/table/<name>/<int:page>')
+def table(name, page):
+    PER_PAGE = 200
+    project = Project.get(Project.name == name)
+    query = Feature.select().where(Feature.project == project).order_by(
+        Feature.id).paginate(page, PER_PAGE)
+    if request.args.get('all') != '1':
+        query = query.where(Feature.validates_count < 2)
+    pagination = Pagination(page, PER_PAGE, query.count(True))
+    columns = set()
+    features = []
+    for feature in query:
+        data = json.loads(feature.feature)
+        audit = json.loads(feature.audit or 'null')
+        if audit and len(audit.get('move', '')) == 2:
+            coord = audit['move']
+        else:
+            coord = data['geometry']['coordinates']
+        f = {'ref': feature.ref, 'lon': coord[0], 'lat': coord[1],
+             'action': data['properties']['action']}
+        tags = {}
+        for p, v in data['properties'].items():
+            if not p.startswith('tags') and not p.startswith('ref_unused_tags'):
+                continue
+            k = p[p.find('.')+1:]
+            if k.startswith('ref'):
+                continue
+            tag = {}
+            if data['properties']['action'] in ('create', 'delete') and p.startswith('tags.'):
+                columns.add(k)
+                tag['before'] = ''
+                tag['after'] = v
+                tag['accepted'] = not audit or k not in audit.get('keep')
+                tag['action'] = data['properties']['action']
+            else:
+                if p.startswith('tags.'):
+                    continue
+                if p.startswith('tags_') or p.startswith('ref_unused_tags'):
+                    columns.add(k)
+                tag['accepted'] = p.startswith('tags_') or (
+                    audit and k in audit.get('override', []))
+                if p.startswith('tags_new'):
+                    tag['before'] = ''
+                    tag['after'] = v
+                    tag['action'] = 'created'
+                elif p.startswith('tags_del'):
+                    tag['before'] = ''  # swapping to print deleted value
+                    tag['after'] = v
+                    tag['action'] = 'deleted'
+                elif p.startswith('tags_cha'):
+                    i = v.find(' -> ')
+                    tag['before'] = v[:i]
+                    tag['after'] = v[i+4:]
+                    tag['action'] = 'changed'
+                elif p.startswith('ref_unused'):
+                    tag['before'] = data['properties'].get('tags.'+k, '')
+                    tag['after'] = v
+                    tag['action'] = 'changed'
+            tags[k] = tag
+        f['tags'] = tags
+        features.append(f)
+
+    return render_template('table.html', project=project, pagination=pagination,
+                           columns=sorted(columns), rows=features)
 
 
 @app.route('/newproject')

@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+{% block title %}{{ project.title }} — {% endblock %}
+{% block header %}
+    <style>
+        #map { height: 200px; }
+        .v_created, .v_create { color: green; }
+        .v_changed, .v_modify { color: #f1c40f; }
+        .v_deleted, .v_delete { color: red; }
+        #features_div { overflow-x: auto; }
+        #features { border-collapse: collapse; }
+        #features tr.even { background-color: #eee; }
+        #features td {
+            border-left: 1px dotted lightgrey;
+            padding: 3px 0.5em;
+        }
+        .pagination { margin: 1em 0; }
+        #legend { list-style-type: none; padding-left: 1em; }
+    </style>
+{% endblock %}
+{% block content %}
+<h1>{{ project.title }}</h1>
+<p>This table shows new and modified tags on each object. Hover over a cell to see the original value.
+Click on an "Edit" link to validate the feature.</p>
+
+<div id="features_div">
+<table id="features">
+    <tr>
+        <th>&nbsp;</th>
+        {% for col in columns %}
+        <th>{{ col }}</th>
+        {% endfor %}
+    </tr>
+    {% for row in rows %}
+    <tr class="{{ loop.cycle('even', 'odd') }}">
+        <td><span class="v_{{ row.action }}">●</span>
+            {% if project.can_validate %}
+            <a href="{{ url_for('tasks', name=project.name, ref=row.ref) }}">Edit</a>
+            {% else %}
+            <a href="{{ url_for('browse', name=project.name, ref=row.ref) }}">View</a>
+            {% endif %}
+        </td>
+        {% for col in columns %}
+        {% if col in row.tags %}
+        {# TODO: v.before on hover, cross v.after if not chosen #}
+        <td title="{{ col }}
+OSM: {{ row.tags[col].before }}">{% if not row.tags[col].accepted %}<s>{% endif %}<span class="v_{{ row.tags[col].action }}">●</span> {{ row.tags[col].after }}{% if not row.tags[col].accepted %}</s>{% endif %}</td>
+        {% else %}
+        <td>&nbsp;</td>
+        {% endif %}
+        {% endfor %}
+    </tr>
+    {% endfor %}
+</table>
+</div>
+
+{% if pagination.pages > 1 %}
+  <div class=pagination>
+  {%- for page in pagination.iter_pages() %}
+    {% if page %}
+      {% if page != pagination.page %}
+        <a href="{{ url_for_other_page(page) }}">{{ page }}</a>
+      {% else %}
+        <strong>{{ page }}</strong>
+      {% endif %}
+    {% else %}
+      <span class=ellipsis>…</span>
+    {% endif %}
+  {%- endfor %}
+  {% if pagination.has_next %}
+    <a href="{{ url_for_other_page(pagination.page + 1)
+      }}">Next &raquo;</a>
+  {% endif %}
+  </div>
+{% endif %}
+
+<p>Legend:</p>
+<ul id="legend">
+    <li><span class="v_created">●</span> Added</li>
+    <li><span class="v_changed">●</span> Changed</li>
+    <li><span class="v_deleted">●</span> Deleted</li>
+</ul>
+<p><a href="{{ url_for('project', name=project.name) }}">Return</a></p>
+{% endblock %}

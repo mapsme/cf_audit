@@ -11,9 +11,10 @@
     <script>
       endpoint = '{{ url_for('api') }}';
       projectId = {{ project.id }};
-      readonly = true;
+      forceRef = {% if ref %}'{{ ref }}'{% else %}null{% endif %};
       imagesPath = '{{ url_for('static', filename='images') }}';
       featureTemplateUrl = '{{ url_for('tasks', name=project.name, ref='tmpl') }}';
+      readonly = true;
     </script>
     <script src="{{ url_for('all_features', pid=project.id) }}"></script>
     <script src="{{ url_for('static', filename='audit.js') }}"></script>

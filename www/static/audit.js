@@ -118,6 +118,8 @@ $(function() {
     });
     $('#random').click(function() { queryNext(); });
     map1.fitBounds(fl.getBounds());
+    if (forceRef)
+      querySpecific(forceRef);
   } else {
     $('#good').click({good: true}, submit);
     $('#bad').click({good: false, msg: ''}, submit);
