@@ -313,7 +313,7 @@ def update_features(project, features):
             feat.action = f['properties']['action'][0]
             feat.save()
     if deleted:
-        q = Feature.delete().where(Feature.ref << deleted)
+        q = Feature.delete().where(Feature.ref << list(deleted))
         q.execute()
     project.bbox = ','.join([str(x) for x in (minlon, minlat, maxlon, maxlat)])
     project.feature_count = Feature.select().where(Feature.project == project).count()
