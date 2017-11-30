@@ -47,7 +47,7 @@ class User(BaseModel):
 
 class Task(BaseModel):
     user = ForeignKeyField(User, index=True, related_name='tasks')
-    feature = ForeignKeyField(Feature, index=True)
+    feature = ForeignKeyField(Feature, index=True, on_delete='CASCADE')
 
 
 def create_tables():
