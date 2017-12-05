@@ -1,7 +1,8 @@
-*.pyc
 __pycache__/
-config_local.py
-*.db
 mockup/
-*.swp
 venv/
+config_local.py
+*.pyc
+*.db
+*.swp
+*.log

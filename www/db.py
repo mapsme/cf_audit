@@ -2,6 +2,12 @@ from peewee import (
     fn, Model, CharField, IntegerField, ForeignKeyField,
     TextField, FixedCharField, BooleanField, DateField
 )
+from playhouse.migrate import (
+    migrate as peewee_migrate,
+    SqliteMigrator,
+    MySQLMigrator,
+    PostgresqlMigrator
+)
 from playhouse.db_url import connect
 import config
 
@@ -50,5 +56,39 @@ class Task(BaseModel):
     feature = ForeignKeyField(Feature, index=True, on_delete='CASCADE')
 
 
-def create_tables():
-    database.create_tables([User, Project, Feature, Task], safe=True)
+LAST_VERSION = 0
+
+
+class Version(BaseModel):
+    version = IntegerField()
+
+
+def migrate():
+    database.create_tables([Version], safe=True)
+    try:
+        v = Version.select().get()
+    except Version.DoesNotExist:
+        database.create_tables([User, Project, Feature, Task], safe=True)
+        v = Version(version=LAST_VERSION)
+        v.save()
+
+    if v.version >= LAST_VERSION:
+        return
+
+    if 'mysql' in config.DATABASE_URI:
+        migrator = MySQLMigrator(database)
+    elif 'sqlite' in config.DATABASE_URI:
+        migrator = SqliteMigrator(database)
+    else:
+        migrator = PostgresqlMigrator(database)
+
+    if v.version == 0:
+        peewee_migrate(
+            # TODO
+            migrator.add_column(User._meta.db_table, User.lang.name, User.lang)
+        )
+        v.version = 1
+        v.save()
+
+    if v.version != LAST_VERSION:
+        raise ValueError('LAST_VERSION in db.py should be {}'.format(v.version))
