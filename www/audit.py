@@ -46,8 +46,14 @@ def get_user():
     return None
 
 
-def is_admin(user):
-    return user and user.uid in config.ADMINS
+def is_admin(user, project=None):
+    if not user:
+        return False
+    if user.uid in config.ADMINS:
+        return True
+    if not project:
+        return user.admin
+    return user == project.owner
 
 
 @app.route('/')
@@ -121,7 +127,7 @@ def project(name):
         Feature.project == project, Feature.audit.is_null(False), Feature.audit != '').count()
     skipped = Feature.select(Feature.id).where(
         Feature.project == project, Feature.audit.contains('"skip": true')).count()
-    return render_template('project.html', project=project, admin=is_admin(get_user()),
+    return render_template('project.html', project=project, admin=is_admin(get_user(), project),
                            desc=desc, val1=val1, val2=val2, corrected=corrected,
                            skipped=skipped)
 
@@ -326,12 +332,15 @@ def upload_project():
         flash(msg)
         return redirect(url_for('add_project', pid=pid))
 
-    if not is_admin(get_user()):
+    user = get_user()
+    if not is_admin(user):
         return redirect(url_for('front'))
     pid = request.form['pid']
     if pid:
         pid = int(pid)
         project = Project.get(Project.id == pid)
+        if not is_admin(user, project):
+            return redirect(url_for('front'))
     else:
         pid = None
         project = Project()
@@ -377,18 +386,18 @@ def upload_project():
 
 @app.route('/delete/<int:pid>')
 def delete_project(pid):
-    if not is_admin(get_user()):
-        return redirect(url_for('front'))
     project = Project.get(Project.id == pid)
+    if not is_admin(get_user(), project):
+        return redirect(url_for('front'))
     project.delete_instance(recursive=True)
     return redirect(url_for('front'))
 
 
 @app.route('/export_audit/<int:pid>')
 def export_audit(pid):
-    if not is_admin(get_user()):
-        return redirect(url_for('front'))
     project = Project.get(Project.id == pid)
+    if not is_admin(get_user(), project):
+        return redirect(url_for('front'))
     query = Feature.select(Feature.ref, Feature.audit).where(
         Feature.project == project, Feature.audit.is_null(False)).tuples()
     audit = {}
