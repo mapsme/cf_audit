@@ -92,14 +92,15 @@ def migrate():
         # Making a copy of Project.owner field, because it's not nullable
         # and we need to migrate a default value.
         admin = User.select(User.uid).where(User.uid == list(config.ADMINS)[0]).get()
-        owner = ForeignKeyField(User, related_name='projects', null=False, default=admin)
+        owner = ForeignKeyField(User, related_name='projects', to_field=User.uid, default=admin)
 
         peewee_migrate(
-            migrator.add_column(User._meta.db_table, User.admin.name, User.admin),
-            migrator.add_column(Project._meta.db_table, Project.owner.name, owner),
-            migrator.add_column(Project._meta.db_table, Project.hidden.name, Project.hidden),
-            migrator.add_column(Project._meta.db_table, Project.overlays.name, Project.overlays),
-            migrator.add_column(Task._meta.db_table, Task.skipped.name, Task.skipped)
+            migrator.add_column(User._meta.db_table, User.admin.db_column, User.admin),
+            migrator.add_column(Project._meta.db_table, Project.owner.db_column, owner),
+            migrator.add_column(Project._meta.db_table, Project.hidden.db_column, Project.hidden),
+            migrator.add_column(Project._meta.db_table, Project.overlays.db_column,
+                                Project.overlays),
+            migrator.add_column(Task._meta.db_table, Task.skipped.db_column, Task.skipped)
         )
         v.version = 1
         v.save()
