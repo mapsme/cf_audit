@@ -365,6 +365,7 @@ def upload_project():
         project = Project()
         project.feature_count = 0
         project.bbox = ''
+        project.owner = user
     project.name = request.form['name'].strip()
     if not project.name:
         return add_flash(pid, 'Empty name - bad')
@@ -377,8 +378,6 @@ def upload_project():
     project.description = request.form['description'].strip()
     project.can_validate = request.form.get('validate') is not None
     project.hidden = request.form.get('is_hidden') is not None
-    if not project.owner or user.uid not in config.ADMINS:
-        project.owner = user
 
     if 'json' not in request.files or request.files['json'].filename == '':
         if not pid:
