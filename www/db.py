@@ -23,6 +23,12 @@ class BaseModel(Model):
         database = database
 
 
+class User(BaseModel):
+    uid = IntegerField(primary_key=True)
+    admin = BooleanField(default=False)
+    bboxes = TextField(null=True)
+
+
 class Project(BaseModel):
     name = CharField(max_length=32, index=True, unique=True)
     title = CharField(max_length=250)
@@ -30,8 +36,11 @@ class Project(BaseModel):
     url = CharField(max_length=1000, null=True)
     feature_count = IntegerField()
     can_validate = BooleanField()
+    hidden = BooleanField(default=False)
     bbox = CharField(max_length=60)
     updated = DateField()
+    owner = ForeignKeyField(User, related_name='projects')
+    overlays = TextField(null=True)
 
 
 class Feature(BaseModel):
@@ -46,29 +55,26 @@ class Feature(BaseModel):
     validates_count = IntegerField(default=0)
 
 
-class User(BaseModel):
-    uid = IntegerField(primary_key=True)
-    bboxes = TextField(null=True)
-
-
 class Task(BaseModel):
     user = ForeignKeyField(User, index=True, related_name='tasks')
     feature = ForeignKeyField(Feature, index=True, on_delete='CASCADE')
+    skipped = BooleanField(default=False)
 
 
-LAST_VERSION = 0
+LAST_VERSION = 1
 
 
 class Version(BaseModel):
     version = IntegerField()
 
 
+@database.atomic()
 def migrate():
     database.create_tables([Version], safe=True)
     try:
         v = Version.select().get()
     except Version.DoesNotExist:
-        database.create_tables([User, Project, Feature, Task], safe=True)
+        database.create_tables([User, Project, Feature, Task])
         v = Version(version=LAST_VERSION)
         v.save()
 
@@ -83,9 +89,19 @@ def migrate():
         migrator = PostgresqlMigrator(database)
 
     if v.version == 0:
+        # Making a copy of Project.owner field, because it's not nullable
+        # and we need to migrate a default value.
+        admin = User.select(User.uid).where(User.uid == list(config.ADMINS)[0]).get()
+        owner = ForeignKeyField(User, related_name='projects', to_field=User.uid, default=admin)
+
         peewee_migrate(
-            # TODO
-            migrator.add_column(User._meta.db_table, User.lang.name, User.lang)
+            migrator.add_column(User._meta.db_table, User.admin.db_column, User.admin),
+            migrator.add_column(Project._meta.db_table, Project.owner.db_column, owner),
+            migrator.add_column(Project._meta.db_table, Project.hidden.db_column, Project.hidden),
+            migrator.add_column(Project._meta.db_table, Project.overlays.db_column,
+                                Project.overlays),
+            migrator.add_column(Task._meta.db_table, Task.skipped.db_column, Task.skipped),
+            migrator.drop_column(Project._meta.db_table, 'validated_count'),
         )
         v.version = 1
         v.save()

@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block title %}Administration — {% endblock %}
+{% block content %}
+<h1>Administration</h1>
+<form action="{{ url_for('admin_users') }}" method="POST">
+    Type user ids to allow uploading projects:<br>
+    <textarea name="uids" cols="20" rows="10">{{ admin_uids or '' }}</textarea><br>
+    <br>
+    <input type="submit">
+</form>
+<p><a href="{{ url_for('front') }}">Return</a></p>
+{% endblock %}
