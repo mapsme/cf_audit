@@ -60,8 +60,11 @@ def is_admin(user, project=None):
 def front():
     user = get_user()
     projects = Project.select().order_by(Project.updated.desc())
+
+    def local_is_admin(proj):
+        return is_admin(user, proj)
     return render_template('index.html', user=user, projects=projects,
-                           admin=is_admin(user))
+                           admin=is_admin(user), is_admin=local_is_admin)
 
 
 @app.route('/login')
@@ -283,7 +286,7 @@ def add_project(pid=None):
     return render_template('newproject.html', project=project)
 
 
-def update_features(project, features):
+def update_features(project, features, audit):
     curfeats = Feature.select(Feature).where(Feature.project == project)
     ref2feat = {f.ref: f for f in curfeats}
     deleted = set(ref2feat.keys())
@@ -294,6 +297,7 @@ def update_features(project, features):
         md5 = hashlib.md5()
         md5.update(data.encode('utf-8'))
         md5_hex = md5.hexdigest()
+
         coord = f['geometry']['coordinates']
         if coord[0] < minlon:
             minlon = coord[0]
@@ -303,10 +307,12 @@ def update_features(project, features):
             minlat = coord[1]
         if coord[1] > maxlat:
             maxlat = coord[1]
+
         if 'ref_id' in f['properties']:
             ref = f['properties']['ref_id']
         else:
             ref = '{}{}'.format(f['properties']['osm_type'], f['properties']['osm_id'])
+
         update = False
         if ref in ref2feat:
             deleted.remove(ref)
@@ -317,6 +323,12 @@ def update_features(project, features):
             feat = Feature(project=project, ref=ref)
             feat.validates_count = 0
             update = True
+
+        f_audit = audit.get(ref)
+        if f_audit and f_audit != feat.audit:
+            feat.audit = f_audit
+            update = True
+
         if update:
             feat.feature = data
             feat.feature_md5 = md5_hex
@@ -324,6 +336,7 @@ def update_features(project, features):
             feat.lat = round(coord[1] * 1e7)
             feat.action = f['properties']['action'][0]
             feat.save()
+
     if deleted:
         q = Feature.delete().where(Feature.ref << list(deleted))
         q.execute()
@@ -363,7 +376,10 @@ def upload_project():
         project.url = None
     project.description = request.form['description'].strip()
     project.can_validate = request.form.get('validate') is not None
-    project.owner = user
+    project.hidden = request.form.get('is_hidden') is not None
+    if not project.owner or user.uid not in config.ADMINS:
+        project.owner = user
+
     if 'json' not in request.files or request.files['json'].filename == '':
         if not pid:
             return add_flash(pid, 'Would not create a project without features')
@@ -372,17 +388,27 @@ def upload_project():
         try:
             features = json.load(codecs.getreader('utf-8')(request.files['json']))
         except ValueError as e:
-            return add_flash(pid, 'Error in the uploaded file: {}'.format(e))
+            return add_flash(pid, 'Error in the uploaded features file: {}'.format(e))
         if 'features' not in features or not features['features']:
             return add_flash(pid, 'No features found in the JSON file')
         features = features['features']
 
-    project.updated = datetime.datetime.utcnow().date()
+    audit = None
+    if 'audit' in request.files and request.files['audit'].filename:
+        try:
+            audit = json.load(codecs.getreader('utf-8')(request.files['audit']))
+        except ValueError as e:
+            return add_flash(pid, 'Error in the uploaded audit file: {}'.format(e))
+        if not audit:
+            return add_flash(pid, 'No features found in the audit JSON file')
+
+    if features or audit or not project.updated:
+        project.updated = datetime.datetime.utcnow().date()
     project.save()
 
     if features:
         with database.atomic():
-            update_features(project, features)
+            update_features(project, features, audit or {})
 
     if project.feature_count == 0:
         project.delete_instance()
@@ -400,8 +426,7 @@ def clear_skipped(pid):
         query = Task.delete().where(
             Task.user == user, Task.skipped == True,
             Task.feature.in_(features))
-        deleted = query.execute()
-        print('Deleted:', deleted)
+        query.execute()
     return redirect(url_for('project', name=project.name))
 
 

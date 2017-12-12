@@ -4,24 +4,14 @@
 {% if admin %}
 <p><a href="{{ url_for('add_project') }}">Create a project</a></p>
 {% endif %}
-<p>Current imports that need validating:</p>
+<p>Imports that need validating:</p>
 <ul>
   {% for proj in projects %}
-  {% if not proj.complete %}
-  <li><a href="{{ url_for('project', name=proj.name) }}">{{ proj.title }}</a> ({{ proj.feature_count }})</li>
+  {% if not proj.hidden or is_admin(proj) %}
+  <li>{% if proj.hidden %}🕶️ {% endif %}<a href="{{ url_for('project', name=proj.name) }}">{{ proj.title }}</a> ({{ proj.feature_count }})</li>
   {% endif %}
   {% endfor %}
 </ul>
-{% if admin %}
-<p>Archived validated imports:</p>
-<ul>
-  {% for proj in projects %}
-  {% if proj.complete %}
-  <li><a href="{{ url_for('project', name=proj.name) }}">{{ proj.title }}</a> ({{ proj.feature_count }})</li>
-  {% endif %}
-  {% endfor %}
-</ul>
-{% endif %}
 {% if not user %}
 <p><a href="{{ url_for('login') }}">Login to validate imports</a></p>
 {% else %}
