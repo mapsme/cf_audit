@@ -127,9 +127,15 @@ def project(name):
         Feature.project == project, Feature.audit.is_null(False), Feature.audit != '').count()
     skipped = Feature.select(Feature.id).where(
         Feature.project == project, Feature.audit.contains('"skip": true')).count()
-    return render_template('project.html', project=project, admin=is_admin(get_user(), project),
+    user = get_user()
+    if user:
+        has_skipped = Task.select().join(Feature).where(
+            Task.user == user, Task.skipped == True, Feature.project == project).count() > 0
+    else:
+        has_skipped = False
+    return render_template('project.html', project=project, admin=is_admin(user, project),
                            desc=desc, val1=val1, val2=val2, corrected=corrected,
-                           skipped=skipped)
+                           skipped=skipped, has_skipped=has_skipped)
 
 
 @app.route('/browse/<name>')
@@ -357,6 +363,7 @@ def upload_project():
         project.url = None
     project.description = request.form['description'].strip()
     project.can_validate = request.form.get('validate') is not None
+    project.owner = user
     if 'json' not in request.files or request.files['json'].filename == '':
         if not pid:
             return add_flash(pid, 'Would not create a project without features')
@@ -384,6 +391,20 @@ def upload_project():
     return redirect(url_for('project', name=project.name))
 
 
+@app.route('/clear_skipped/<int:pid>')
+def clear_skipped(pid):
+    project = Project.get(Project.id == pid)
+    user = get_user()
+    if user:
+        features = Feature.select().where(Feature.project == project)
+        query = Task.delete().where(
+            Task.user == user, Task.skipped == True,
+            Task.feature.in_(features))
+        deleted = query.execute()
+        print('Deleted:', deleted)
+    return redirect(url_for('project', name=project.name))
+
+
 @app.route('/delete/<int:pid>')
 def delete_project(pid):
     project = Project.get(Project.id == pid)
@@ -407,6 +428,24 @@ def export_audit(pid):
     return app.response_class(
         json.dumps(audit, ensure_ascii=False), mimetype='application/json',
         headers={'Content-Disposition': 'attachment;filename=audit_{}.json'.format(project.name)})
+
+
+@app.route('/admin')
+def admin():
+    user = get_user()
+    if not user or user.uid not in config.ADMINS:
+        return redirect(url_for('front'))
+    admin_uids = User.select(User.uid).where(User.admin == True).tuples()
+    uids = '\n'.join([str(u[0]) for u in admin_uids])
+    return render_template('admin.html', uids=uids)
+
+
+@app.route('/admin_users', methods=['POST'])
+def admin_users():
+    uids = [int(x.strip()) for x in request.form['uids'].split()]
+    User.update(admin=False).where(User.uid.not_in(uids)).execute()
+    User.update(admin=True).where(User.uid.in_(uids)).execute()
+    return redirect(url_for('admin'))
 
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -462,11 +501,12 @@ def api_feature(pid):
     if user and request.method == 'POST' and project.can_validate:
         ref_and_audit = request.get_json()
         if ref_and_audit and len(ref_and_audit) == 2:
+            skipped = ref_and_audit[1] is None
             feat = Feature.get(Feature.project == project, Feature.ref == ref_and_audit[0])
             user_did_it = Task.select(Task.id).where(
                 Task.user == user, Task.feature == feat).count() > 0
-            Task.create(user=user, feature=feat)
-            if ref_and_audit[1] is not None:
+            Task.create(user=user, feature=feat, skipped=skipped)
+            if not skipped:
                 if len(ref_and_audit[1]):
                     new_audit = json.dumps(ref_and_audit[1], sort_keys=True, ensure_ascii=False)
                 else:

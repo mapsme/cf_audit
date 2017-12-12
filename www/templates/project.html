@@ -45,5 +45,8 @@
     <li>Have corrections: {{ corrected }}</li>
     <li>To be ignored: {{ skipped }}</li>
 </ul>
+{% if has_skipped %}
+<p><a href="{{ url_for('clear_skipped', pid=project.id) }}">Put skipped items back</a> on your review list</p>
+{% endif %}
 <p><a href="{{ url_for('front') }}">Return</a></p>
 {% endblock %}

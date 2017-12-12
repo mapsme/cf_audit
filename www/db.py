@@ -74,7 +74,7 @@ def migrate():
     try:
         v = Version.select().get()
     except Version.DoesNotExist:
-        database.create_tables([User, Project, Feature, Task], safe=True)
+        database.create_tables([User, Project, Feature, Task])
         v = Version(version=LAST_VERSION)
         v.save()
 
@@ -100,7 +100,8 @@ def migrate():
             migrator.add_column(Project._meta.db_table, Project.hidden.db_column, Project.hidden),
             migrator.add_column(Project._meta.db_table, Project.overlays.db_column,
                                 Project.overlays),
-            migrator.add_column(Task._meta.db_table, Task.skipped.db_column, Task.skipped)
+            migrator.add_column(Task._meta.db_table, Task.skipped.db_column, Task.skipped),
+            migrator.drop_column(Project._meta.db_table, 'validated_count'),
         )
         v.version = 1
         v.save()

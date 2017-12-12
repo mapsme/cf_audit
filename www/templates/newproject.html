@@ -11,6 +11,8 @@
     <textarea name="description" cols="100" rows="10">{{ project.description or '' }}</textarea><br>
     <br>
     JSON: <input type="file" name="json"><br>
+    Audit: <input type="file" name="audit"><br>
+    <input type="checkbox" id="is_hidden" name="is_hidden" {% if project.hidden %}checked="checked"{% endif %}><label for="is_hidden"> Hide from the projects list</label><br>
     <input type="checkbox" id="validate" name="validate" {% if project.can_validate %}checked="checked"{% endif %}><label for="validate"> Enable validation</label><br>
     <br>
     <input type="submit">

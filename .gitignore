@@ -6,3 +6,4 @@ config_local.py
 *.db
 *.swp
 *.log
+*.backup
