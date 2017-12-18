@@ -56,7 +56,10 @@ $(function() {
   });
 
   if (readonly && features) {
-    var fl = L.featureGroup(),
+    var fl = L.markerClusterGroup({
+          showCoverageOnHover: false,
+          maxClusterRadius: function(zoom) { return zoom < 15 ? 80 : 10; }
+        }),
         iconRed = new L.Icon({
           iconUrl: imagesPath + '/marker-red.png',
           shadowUrl: imagesPath + '/marker-shadow.png',
