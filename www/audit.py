@@ -338,6 +338,9 @@ def update_features(project, features, audit):
             feat.lon = round(coord[0] * 1e7)
             feat.lat = round(coord[1] * 1e7)
             feat.action = f['properties']['action'][0]
+            if feat.validates_count > 0:
+                feat.validates_count = 0
+                Task.delete().where(Task.feature == feat).execute()
             feat.save()
 
     if deleted:
