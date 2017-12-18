@@ -159,8 +159,11 @@ def tasks(name, ref=None):
         return redirect(url_for('login', next=request.path))
     project = Project.get(Project.name == name)
     if not project.can_validate:
-        flash('Project validation is disabled')
-        return redirect(url_for('project', name=name))
+        if ref:
+            return redirect(url_for('browse', name=name, ref=ref))
+        else:
+            flash('Project validation is disabled')
+            return redirect(url_for('project', name=name))
     return render_template('task.html', project=project, ref=ref)
 
 
