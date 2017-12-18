@@ -17,6 +17,7 @@
       forceRef = {% if ref %}'{{ ref }}'{% else %}null{% endif %};
       imagesPath = '{{ url_for('static', filename='images') }}';
       featureTemplateUrl = '{{ url_for('tasks', name=project.name, ref='tmpl') }}';
+      browseTemplateUrl = '{{ url_for('browse', name=project.name, ref='tmpl') }}';
       readonly = true;
     </script>
     <script src="{{ url_for('all_features', pid=project.id) }}"></script>
@@ -24,7 +25,7 @@
 {% endblock %}
 {% block content %}
     <div id="left">
-      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a><span id="editthis">, <a href="#" id="editlink">edit this</a></p>
+      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a>{% if project.can_validate %}<span id="editthis">, <a href="#" id="editlink">edit this</a>{% endif %}</p>
       <h1 id="title">{{ project.title }}</h1>
       <p id="hint">
         <span id="transparent">Transparent marker is the <span id="tr_which"></span> point location.</span>

@@ -106,7 +106,8 @@ $(function() {
     }
   });
   if (readonly) {
-    $('#editthis').hide();
+    if ($('#editthis').length)
+      $('#editthis').hide();
     $('#zoom_out').click(function() {
       hidePoint();
       if (lastView) {
@@ -121,6 +122,9 @@ $(function() {
     });
     $('#random').click(function() { queryNext(); });
     map1.fitBounds(fl.getBounds());
+    window.addEventListener('popstate', function(e) {
+      querySpecific(e.state);
+    });
     if (forceRef)
       querySpecific(forceRef);
   } else {
@@ -220,9 +224,16 @@ function displayPoint(data, audit) {
 
   // Pan the map and draw a marker
   if (readonly) {
-    lastView = [map1.getCenter(), map1.getZoom()];
-    $('#editlink').attr('href', featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-    $('#editthis').show();
+    var $editThis = $('#editthis'),
+        lastView = [map1.getCenter(), map1.getZoom()];
+    if (history.state != data.ref) {
+      history.pushState(data.ref, data.ref + ' — ' + document.title,
+        browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+    }
+    if ($editThis.length) {
+      $('#editlink').attr('href', featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+      $editThis.show();
+    }
   }
   $('#hint').show();
   if (rlatlon && props['action'] != 'create') {
