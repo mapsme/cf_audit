@@ -1,8 +1,8 @@
 var map1, map2, marker1, marker2, smarker1, smarker2, feature, keys, lastView, defaultTitle;
 
 $(function() {
-  map1 = L.map('map1', {minZoom: readonly ? 6 : 15, maxZoom: 19, zoomControl: false});
-  map2 = L.map('map2', {minZoom: readonly ? 6 : 15, maxZoom: 19, zoomControl: false});
+  map1 = L.map('map1', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
+  map2 = L.map('map2', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
   map1.attributionControl.setPrefix('');
   map2.attributionControl.setPrefix('');
 
