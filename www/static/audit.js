@@ -262,6 +262,19 @@ function displayPoint(data, audit) {
     marker1 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map1);
 
     if (canMove) {
+      var guideLayer = L.layerGroup();
+      L.marker(latlon).addTo(guideLayer);
+      L.marker(rlatlon).addTo(guideLayer);
+      if (movePos.length == 2)
+        L.marker([refCoord[1], refCoord[0]]).addTo(guideLayer);
+
+      marker1.snapediting = new L.Handler.MarkerSnap(map1, marker1, {snapDistance: 8});
+      marker1.snapediting.addGuideLayer(guideLayer);
+      marker1.snapediting.enable();
+      marker2.snapediting = new L.Handler.MarkerSnap(map2, marker2, {snapDistance: 8});
+      marker2.snapediting.addGuideLayer(guideLayer);
+      marker2.snapediting.enable();
+
       $('#canmove').show();
       var move = true;
       marker1.on('move', function () {
