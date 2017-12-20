@@ -131,7 +131,8 @@ $(function() {
   } else {
     $('#good').click({good: true}, submit);
     $('#bad').click({good: false, msg: ''}, submit);
-    $('#bad_dup').click({good: false, msg: ''}, submit);
+    $('#bad_dup').click({good: false, msg: 'Duplicate'}, submit);
+    $('#bad_nosuch').click({good: false, msg: 'No such place'}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
     if (forceRef)
       querySpecific(forceRef);
@@ -265,7 +266,7 @@ function displayPoint(data, audit) {
       var guideLayer = L.layerGroup();
       L.marker(latlon).addTo(guideLayer);
       L.marker(rlatlon).addTo(guideLayer);
-      if (movePos.length == 2)
+      if (movePos && movePos.length == 2)
         L.marker([refCoord[1], refCoord[0]]).addTo(guideLayer);
 
       marker1.snapediting = new L.Handler.MarkerSnap(map1, marker1, {snapDistance: 8});
@@ -328,7 +329,7 @@ function displayPoint(data, audit) {
   $('#buttons button').each(function() { $(this).prop('disabled', false); });
   if (readonly) {
     // TODO: show or hide "zoom" buttons depending on selected feature
-  } else if (props['action'] == 'modify') {
+  } else if (props['action'] == 'create') {
     $('#bad').hide();
     $('#bad_dup').show();
     $('#bad_nosuch').show();

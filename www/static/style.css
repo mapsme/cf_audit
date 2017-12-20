@@ -127,6 +127,11 @@ td input {
   color: pink;
 }
 
+#buttons #bad_dup, #buttons #bad_nosuch {
+  width: 47%;
+  vertical-align: bottom;
+}
+
 #buttons .b_bad:hover {
   color: red;
 }
