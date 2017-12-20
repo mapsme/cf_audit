@@ -36,11 +36,18 @@
         <p>Add a fixme tag if needed:<br>
         <input type="text" id="fixme"></p>
       </div>
+      <p id="last_action">The last reviewer rejected this change with the verdict "<span id="last_verdict"></span>".</p>
       <div id="buttons">
         <button id="good" class="b_good">Good</button>
         <button id="bad" class="b_bad">Don't Change</button>
         <button id="bad_dup" class="b_bad">Duplicate</button>
         <button id="bad_nosuch" class="b_bad">Not There</button>
+        <div id="reason_box">
+          <p>Why?<br>
+          <input type="text" id="reason">
+          <button id="submit_reason">OK</button</p>
+          <button id="create">Create New Instead</button>
+        </div>
         <button id="skip" class="b_next">Skip</button>
       </div>
     </div>

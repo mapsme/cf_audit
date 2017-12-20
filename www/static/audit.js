@@ -90,6 +90,7 @@ $(function() {
 
   defaultTitle = $('#title').html();
   $('#hint').hide();
+  $('#last_action').hide();
   map1.on('zoomend', function() {
     if (map1.getZoom() >= 10) {
       if (readonly) {
@@ -129,8 +130,23 @@ $(function() {
     if (forceRef)
       querySpecific(forceRef);
   } else {
+    var $rb = $('#reason_box');
+    $rb.hide();
+    $('#bad').click(function() {
+      $rb.show();
+      $('#bad').hide();
+      $('#skip').hide();
+      $('#reason').focus();
+    });
+    $('#reason').keypress(function(e) {
+      if (e.which == 13) {
+        $('#submit_reason').click();
+        return false;
+      }
+    });
     $('#good').click({good: true}, submit);
-    $('#bad').click({good: false, msg: ''}, submit);
+    $('#submit_reason').click({good: false, msg: 'reason'}, submit);
+    $('#create').click({good: false, msg: 'create'}, submit);
     $('#bad_dup').click({good: false, msg: 'Duplicate'}, submit);
     $('#bad_nosuch').click({good: false, msg: 'No such place'}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
@@ -304,7 +320,7 @@ function displayPoint(data, audit) {
       $('#canmove').hide();
     }
   }
-  
+
   // Fill in the left panel
 
   function formatObjectRef(props) {
@@ -333,11 +349,13 @@ function displayPoint(data, audit) {
     $('#bad').hide();
     $('#bad_dup').show();
     $('#bad_nosuch').show();
+    $('#skip').show();
     $('#good').focus();
   } else {
     $('#bad').show();
     $('#bad_dup').hide();
     $('#bad_nosuch').hide();
+    $('#skip').show();
     $('#good').focus();
   }
 
@@ -345,6 +363,19 @@ function displayPoint(data, audit) {
     $('#fixme_box').show();
     $('#fixme').val(audit['fixme'] || '');
     $('#fixme').on('input', setChangedFast);
+    $('#reason').val(audit['comment'] || '');
+  }
+
+  var verdict = audit['comment'] || '';
+  if (audit['create'])
+    verdict = 'create new point instead';
+  if (audit['skip'] && !verdict)
+    verdict = '<empty>';
+  if (verdict) {
+    $('#last_verdict').text(verdict);
+    $('#last_action').show();
+  } else {
+    $('#last_action').hide();
   }
 
   // Table of tags. First record the original values for unused tags
@@ -460,6 +491,7 @@ function displayPoint(data, audit) {
 function hidePoint() {
   $('#tags').empty();
   $('#hint').hide();
+  $('#last_action').hide();
   $('#fixme_box').hide();
   $('#title').html(defaultTitle);
   if (marker2) {
@@ -528,9 +560,13 @@ function prepareAudit(data) {
 
   // Record good/bad and comment
   if (data && !data.good) {
-    audit['skip'] = true;
-    if (data.msg)
-      audit['comment'] = data.msg;
+    if (data.msg == 'create')
+      audit['create'] = true;
+    else {
+      audit['skip'] = true;
+      if (data.msg)
+        audit['comment'] = data.msg == 'reason' ? ($('#reason').val() || '') : data.msg;
+    }
   }
 
   return audit;
@@ -539,6 +575,7 @@ function prepareAudit(data) {
 function submit(e) {
   // Send audit result and query the next feature
   var audit = prepareAudit(e.data);
+  $('#reason_box').hide();
   $('#buttons button').each(function() { $(this).prop('disabled', true); });
   queryNext([feature.ref, e.data.msg == 'skip' ? null : audit]);
 }

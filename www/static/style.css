@@ -48,6 +48,11 @@ h1 {
   color: green;
 }
 
+#last_action {
+  font-style: italic;
+  color: darkred;
+}
+
 #tags_wrapper {
   margin: 1em 0;
   overflow-x: auto;
@@ -112,10 +117,29 @@ td input {
   font-size: 26px;
 }
 
+#buttons #submit_reason {
+  width: inherit;
+  margin: 0;
+  font-size: 16px;
+  vertical-align: bottom;
+}
+
+#reason_box p {
+  margin: 0;
+}
+
+#reason_box input {
+  width: 75%;
+}
+
+#reason_box #create {
+  background-color: lightgreen;
+  margin-top: 0.5em;
+}
+
 #buttons .b_good {
   background-color: lightgreen;
   height: 4em;
-  font-size: 26px;
 }
 
 .b_good:hover, .b_next:hover, .b_readonly:hover {
