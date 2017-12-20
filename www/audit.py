@@ -9,6 +9,7 @@ import codecs
 import datetime
 import hashlib
 import math
+import os
 
 oauth = OAuth()
 openstreetmap = oauth.remote_app(
@@ -31,6 +32,17 @@ def before_request():
 def teardown(exception):
     if not database.is_closed():
         database.close()
+
+
+def dated_url_for(endpoint, **values):
+    if endpoint == 'static':
+        filename = values.get('filename', None)
+        if filename:
+            file_path = os.path.join(app.root_path,
+                                     endpoint, filename)
+            values['q'] = int(os.stat(file_path).st_mtime)
+    return url_for(endpoint, **values)
+app.jinja_env.globals['dated_url_for'] = dated_url_for
 
 
 def get_user():

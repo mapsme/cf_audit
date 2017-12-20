@@ -2,7 +2,7 @@
 {% block title %}{{ project.title }} — {% endblock %}
 {% block header %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="{{ dated_url_for('static', filename='style.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='Control.MiniMap.min.css') }}" />
     <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.8.1/src/leaflet.geometryutil.js"></script>
@@ -18,7 +18,7 @@
       imagesPath = '{{ url_for('static', filename='images') }}';
       readonly = false;
     </script>
-    <script src="{{ url_for('static', filename='audit.js') }}"></script>
+    <script src="{{ dated_url_for('static', filename='audit.js') }}"></script>
 {% endblock %}
 {% block content %}
     <div id="left">
