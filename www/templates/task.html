@@ -24,6 +24,7 @@
     <div id="left">
       <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a></p>
       <h1 id="title">{{ project.title }}</h1>
+      <p id="last_action">The last reviewer rejected this change with the verdict "<span id="last_verdict"></span>".</p>
       <p id="hint">
         <span id="canmove">You can move the marker to a better location. Imagery may be misaligned.</span>
         <span id="transparent">Semi-transparent marker is the location from <span id="tr_which"></span>.</span>
@@ -36,7 +37,6 @@
         <p>Value for the <tt>fixme</tt> tag if needed:<br>
         <input type="text" id="fixme"></p>
       </div>
-      <p id="last_action">The last reviewer rejected this change with the verdict "<span id="last_verdict"></span>".</p>
       <div id="buttons">
         <button id="good" class="b_good">Good</button>
         <button id="bad" class="b_bad">Don't Change</button>
