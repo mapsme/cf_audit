@@ -14,6 +14,7 @@
     Audit: <input type="file" name="audit"><br>
     <input type="checkbox" id="is_hidden" name="is_hidden" {% if project.hidden %}checked="checked"{% endif %}><label for="is_hidden"> Hide from the projects list</label><br>
     <input type="checkbox" id="validate" name="validate" {% if project.can_validate %}checked="checked"{% endif %}><label for="validate"> Enable validation</label><br>
+    <input type="checkbox" id="validate_modified" name="validate_modified" {% if project.validate_modified %}checked="checked"{% endif %}><label for="validate_modified"> Validate only modified features</label><br>
     <br>
     <input type="submit">
 </form>

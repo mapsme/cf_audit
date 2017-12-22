@@ -41,6 +41,8 @@ class Project(BaseModel):
     updated = DateField()
     owner = ForeignKeyField(User, related_name='projects')
     overlays = TextField(null=True)
+    audit = TextField(null=True)
+    validate_modified = BooleanField(default=False)
 
 
 class Feature(BaseModel):
@@ -61,7 +63,7 @@ class Task(BaseModel):
     skipped = BooleanField(default=False)
 
 
-LAST_VERSION = 1
+LAST_VERSION = 2
 
 
 class Version(BaseModel):
@@ -104,6 +106,15 @@ def migrate():
             migrator.drop_column(Project._meta.db_table, 'validated_count'),
         )
         v.version = 1
+        v.save()
+
+    if v.version == 1:
+        peewee_migrate(
+            migrator.add_column(Project._meta.db_table, Project.validate_modified.db_column,
+                                Project.validate_modified),
+            migrator.add_column(Project._meta.db_table, Project.audit.db_column, Project.audit),
+        )
+        v.version = 2
         v.save()
 
     if v.version != LAST_VERSION:

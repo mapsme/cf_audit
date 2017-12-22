@@ -134,10 +134,16 @@ def logout():
 def project(name):
     project = Project.get(Project.name == name)
     desc = project.description.replace('\n', '<br>')
+    cnt = project.feature_count
     val1 = Feature.select(Feature.id).where(Feature.project == project,
-                                            Feature.validates_count > 0).count()
+                                            Feature.validates_count > 0)
     val2 = Feature.select(Feature.id).where(Feature.project == project,
-                                            Feature.validates_count >= 2).count()
+                                            Feature.validates_count >= 2)
+    if project.validate_modified:
+        val1 = val1.where(Feature.action == 'm')
+        val2 = val2.where(Feature.action == 'm')
+        cnt = Feature.select(Feature.id).where(Feature.project == project,
+                                               Feature.action == 'm').count()
     corrected = Feature.select(Feature.id).where(
         Feature.project == project, Feature.audit.is_null(False), Feature.audit != '').count()
     skipped = Feature.select(Feature.id).where(
@@ -149,8 +155,9 @@ def project(name):
     else:
         has_skipped = False
     return render_template('project.html', project=project, admin=is_admin(user, project),
-                           desc=desc, val1=val1, val2=val2, corrected=corrected,
-                           skipped=skipped, has_skipped=has_skipped)
+                           count=cnt, desc=desc, val1=val1.count(), val2=val2.count(),
+                           corrected=corrected, skipped=skipped,
+                           has_skipped=has_skipped)
 
 
 @app.route('/browse/<name>')
@@ -340,9 +347,11 @@ def update_features(project, features, audit):
             update = True
 
         f_audit = audit.get(ref)
-        if f_audit and f_audit != feat.audit:
-            feat.audit = f_audit
-            update = True
+        if f_audit:
+            f_audit = json.dumps(f_audit, ensure_ascii=False, sort_keys=True)
+            if f_audit != feat.audit:
+                feat.audit = f_audit
+                update = True
 
         if update:
             feat.feature = data
@@ -363,6 +372,19 @@ def update_features(project, features, audit):
     project.save()
 
 
+def update_audit(project):
+    audit = json.loads(project.audit or '{}')
+    changed = False
+    query = Feature.select(Feature.ref, Feature.audit).where(
+        Feature.project == project, Feature.audit.is_null(False)).tuples()
+    for feat in query:
+        if feat[1]:
+            changed = True
+            audit[feat[0]] = json.loads(feat[1])
+    if changed:
+        project.audit = json.dumps(audit, ensure_ascii=False)
+
+
 @app.route('/newproject/upload', methods=['POST'])
 def upload_project():
     def add_flash(pid, msg):
@@ -378,6 +400,7 @@ def upload_project():
         project = Project.get(Project.id == pid)
         if not is_admin(user, project):
             return redirect(url_for('front'))
+        update_audit(project)
     else:
         pid = None
         project = Project()
@@ -395,6 +418,7 @@ def upload_project():
         project.url = None
     project.description = request.form['description'].strip()
     project.can_validate = request.form.get('validate') is not None
+    project.validate_modified = request.form.get('validate_modified') is not None
     project.hidden = request.form.get('is_hidden') is not None
 
     if 'json' not in request.files or request.files['json'].filename == '':
@@ -419,13 +443,17 @@ def upload_project():
         if not audit:
             return add_flash(pid, 'No features found in the audit JSON file')
 
+    proj_audit = json.loads(project.audit or '{}')
+    if audit:
+        proj_audit.update(audit)
+        project.audit = json.dumps(proj_audit, ensure_ascii=False)
     if features or audit or not project.updated:
         project.updated = datetime.datetime.utcnow().date()
     project.save()
 
     if features:
         with database.atomic():
-            update_features(project, features, audit or {})
+            update_features(project, features, proj_audit)
 
     if project.feature_count == 0:
         project.delete_instance()
@@ -461,14 +489,10 @@ def export_audit(pid):
     project = Project.get(Project.id == pid)
     if not is_admin(get_user(), project):
         return redirect(url_for('front'))
-    query = Feature.select(Feature.ref, Feature.audit).where(
-        Feature.project == project, Feature.audit.is_null(False)).tuples()
-    audit = {}
-    for feat in query:
-        if feat[1]:
-            audit[feat[0]] = json.loads(feat[1])
+    update_audit(project)
+    project.save()
     return app.response_class(
-        json.dumps(audit, ensure_ascii=False), mimetype='application/json',
+        project.audit or '{}', mimetype='application/json',
         headers={'Content-Disposition': 'attachment;filename=audit_{}.json'.format(project.name)})
 
 
@@ -571,6 +595,8 @@ def api_feature(pid):
             query = Feature.select().where(
                 Feature.project == project, Feature.validates_count < 2).where(
                     ~fn.EXISTS(task_query)).order_by(fn_Random())
+            if project.validate_modified:
+                query = query.where(Feature.action == 'm')
             if user.bboxes:
                 bboxes = BBoxes(user)
                 feature = None

@@ -15,12 +15,12 @@
 
 #p_val2 {
   background-color: #52be80;
-  width: {{ (300 * val2 / project.feature_count) | round(1) }}px;
+  width: {{ (300 * val2 / count) | round(1) }}px;
 }
 
 #p_val1 {
   background-color: #f7dc6f;
-  width: {{ (300 * (val1 - val2) / project.feature_count) | round(1) }}px;
+  width: {{ (300 * (val1 - val2) / count) | round(1) }}px;
 }
 </style>
 {% endblock %}
@@ -40,6 +40,7 @@
 <div id="progress"><span id="p_val2"></span><span id="p_val1"></span></div>
 <ul>
     <li>Total features: {{ project.feature_count }}</li>
+    <li>Features to validate: {{ count }}</li>
     <li>Features looked at: {{ val1 }}</li>
     <li>Validated twice: {{ val2 }}</li>
     <li>Have corrections: {{ corrected }}</li>
