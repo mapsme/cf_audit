@@ -16,6 +16,7 @@
       projectId = {{ project.id }};
       forceRef = {% if ref %}'{{ ref }}'{% else %}null{% endif %};
       imagesPath = '{{ url_for('static', filename='images') }}';
+      featureTemplateUrl = '{{ url_for('tasks', name=project.name, ref='tmpl') }}';
       readonly = false;
     </script>
     <script src="{{ dated_url_for('static', filename='audit.js') }}"></script>

@@ -252,7 +252,11 @@ function displayPoint(data, audit) {
       $('#editlink').attr('href', featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
       $editThis.show();
     }
+  } else {
+    history.replaceState(data.ref, data.ref + ' — ' + document.title,
+      featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
   }
+
   $('#hint').show();
   if (rlatlon && props['action'] != 'create') {
     var smTitle = rIsOSM ? 'OSM location' : 'External dataset location';
@@ -429,7 +433,10 @@ function displayPoint(data, audit) {
 
   // Render the table
   function esc(s) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (s.startsWith('http://') || s.startsWith('https://'))
+      s = '<a href="'+s+'" target="_blank">'+s+'</a>';
+    return s;
   }
   keys.sort(function(a, b) {
     return a.length == b.length ? ((a[0] > b[0]) - (b[0] - a[0])) : a.length - b.length;
