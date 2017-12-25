@@ -89,6 +89,10 @@ h1 {
   padding: 2px 0;
 }
 
+#tags td a {
+  color: inherit;
+}
+
 #tags td.red { background-color: pink; }
 #tags td.green { background-color: lightgreen; }
 #tags td.yellow { background-color: yellow; }
