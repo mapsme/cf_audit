@@ -218,7 +218,7 @@ function displayPoint(data, audit) {
     if (wereCoord)
       rlatlon = L.latLng(wereCoord[1], wereCoord[0]);
     else
-      latlon = L.latLng(coord[1], coord[0]);
+      rlatlon = L.latLng(coord[1], coord[0]);
     rIsOSM = true;
   } else if (movePos.length == 2) {
     latlon = L.latLng(movePos[1], movePos[0]);
