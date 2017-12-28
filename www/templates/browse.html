@@ -26,7 +26,7 @@
 {% endblock %}
 {% block content %}
     <div id="left">
-      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a>{% if project.can_validate %}<span id="editthis">, <a href="#" id="editlink">edit this</a>{% endif %}</p>
+      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a>{% if project.can_validate %}<span id="editthis">, <a href="#" id="editlink">edit this</a></span>{% endif %}</p>
       <h1 id="title">{{ project.title }}</h1>
       <p id="hint">
         <span id="transparent">Transparent marker is the <span id="tr_which"></span> point location.</span>

@@ -255,6 +255,7 @@ function displayPoint(data, audit) {
   } else {
     history.replaceState(data.ref, data.ref + ' — ' + document.title,
       featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+    $('#browselink').attr('href', browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
   }
 
   $('#hint').show();

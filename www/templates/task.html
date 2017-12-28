@@ -17,13 +17,14 @@
       forceRef = {% if ref %}'{{ ref }}'{% else %}null{% endif %};
       imagesPath = '{{ url_for('static', filename='images') }}';
       featureTemplateUrl = '{{ url_for('tasks', name=project.name, ref='tmpl') }}';
+      browseTemplateUrl = '{{ url_for('browse', name=project.name, ref='tmpl') }}';
       readonly = false;
     </script>
     <script src="{{ dated_url_for('static', filename='audit.js') }}"></script>
 {% endblock %}
 {% block content %}
     <div id="left">
-      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a></p>
+      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a>, <a href="#" id="browselink">browse around</a></p>
       <h1 id="title">{{ project.title }}</h1>
       <p id="last_action">The last reviewer rejected this change with the verdict "<span id="last_verdict"></span>".</p>
       <p id="hint">
