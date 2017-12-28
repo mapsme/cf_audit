@@ -215,7 +215,10 @@ function displayPoint(data, audit) {
       rlatlon = refCoord ? L.latLng(refCoord[1], refCoord[0]) : null;
   } else if (movePos == 'dataset' && refCoord) {
     latlon = L.latLng(refCoord[1], refCoord[0]);
-    rlatlon = wereCoord ? L.latLng(wereCoord[1], wereCoord[0]) : null;
+    if (wereCoord)
+      rlatlon = L.latLng(wereCoord[1], wereCoord[0]);
+    else
+      latlon = L.latLng(coord[1], coord[0]);
     rIsOSM = true;
   } else if (movePos.length == 2) {
     latlon = L.latLng(movePos[1], movePos[0]);
