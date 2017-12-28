@@ -146,9 +146,9 @@ $(function() {
     });
     $('#good').click({good: true}, submit);
     $('#submit_reason').click({good: false, msg: 'reason'}, submit);
-    $('#create').click({good: false, msg: 'create'}, submit);
+    $('#create').click({good: false, create: true, msg: 'reason'}, submit);
     $('#bad_dup').click({good: false, msg: 'Duplicate'}, submit);
-    $('#bad_nosuch').click({good: false, msg: 'No such place'}, submit);
+    $('#bad_nosuch').click({good: false, msg: 'Not there'}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
     if (forceRef)
       querySpecific(forceRef);
@@ -568,13 +568,12 @@ function prepareAudit(data) {
 
   // Record good/bad and comment
   if (data && !data.good) {
-    if (data.msg == 'create')
+    if (data.create)
       audit['create'] = true;
-    else {
+    else
       audit['skip'] = true;
-      if (data.msg)
-        audit['comment'] = data.msg == 'reason' ? ($('#reason').val() || '') : data.msg;
-    }
+    if (data.msg)
+      audit['comment'] = data.msg == 'reason' ? ($('#reason').val() || '') : data.msg;
   }
 
   return audit;
