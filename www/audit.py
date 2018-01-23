@@ -514,8 +514,7 @@ def external_audit(pid):
             elif isinstance(audit['move'], list) and len(audit['move']) == 2:
                 eaudit['move'] = audit['move']
         if 'keep' in audit:
-            if 'keep' not in eaudit:
-                eaudit['keep'] = {}
+            keep = {}
             for k in audit['keep']:
                 orig = None
                 if 'tags_deleted.'+k in props:
@@ -524,7 +523,9 @@ def external_audit(pid):
                     orig = props['tags_changed.'+k]
                     orig = orig[:orig.find(' -> ')]
                 if orig:
-                    eaudit['keep'][k] = orig
+                    keep[k] = orig
+            if keep:
+                eaudit['keep'] = keep
         if audit.get('skip'):
             if audit.get('comment', '').lower() != 'duplicate':
                 eaudit['skip'] = audit.get('comment', '<no reason>')
