@@ -532,8 +532,8 @@ def external_audit(pid):
         if eaudit:
             result[feat.ref] = eaudit
     return app.response_class(
-        json.dumps(result, ensure_ascii=False), mimetype='application/json',
-        headers={
+        json.dumps(result, ensure_ascii=False, indent=1, sort_keys=True),
+        mimetype='application/json', headers={
             'Content-Disposition': 'attachment;filename=ext_audit_{}.json'.format(project.name)
         })
 
