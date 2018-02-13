@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.4'
 services:
   cf-audit: &auditor
     build: .
@@ -6,8 +6,8 @@ services:
       # uncomment following line to enable Debugging
       # DEBUG: yes
       DATABASE_URI: 'postgresql://cf_audit:pw@database:5432/cf_audit'
-      OAUTH_KEY: 'your-key'
-      OAUTH_SECRET: 'your-secret'
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     depends_on:
