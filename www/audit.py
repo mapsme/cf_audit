@@ -1,5 +1,5 @@
 from www import app
-from db import database, User, Feature, Project, Task, fn_Random
+from .db import database, User, Feature, Project, Task, fn_Random
 from flask import session, url_for, redirect, request, render_template, flash, jsonify
 from flask_oauthlib.client import OAuth
 from peewee import fn
