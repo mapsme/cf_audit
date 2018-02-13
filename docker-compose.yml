@@ -18,8 +18,6 @@ services:
     ports: []
   database:
     image: postgres:10
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_USER: cf_audit
       POSTGRES_PASSWORD: pw
