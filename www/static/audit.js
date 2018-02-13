@@ -203,7 +203,7 @@ function displayPoint(data, audit) {
       canMove = !readonly && (props['can_move'] || props['action'] == 'create'),
       refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
       wereCoord = props['were_coords'],
-      remarks = pop(props, '__remarks__');
+      remarks = pop(props, 'remarks');
     
   var $good = $('#good');
   $good.text('Good');
