@@ -441,6 +441,8 @@ function displayPoint(data, audit) {
   if (remarks) {
     $('#remarks_box').show(); 
     $('#remarks_content').text(remarks);
+  } else {
+    $('#remarks_box').hide();
   }
 
   // Render the table
