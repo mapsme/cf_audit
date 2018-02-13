@@ -91,6 +91,7 @@ $(function() {
   defaultTitle = $('#title').html();
   $('#hint').hide();
   $('#last_action').hide();
+  $('#remarks_box').hide();
   map1.on('zoomend', function() {
     if (map1.getZoom() >= 10) {
       if (readonly) {
@@ -193,7 +194,7 @@ function displayPoint(data, audit) {
       refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
       wereCoord = props['were_coords'],
       remarks = props['remarks'];
-    
+
   var $good = $('#good');
   $good.text('Good');
   function setChangedFast() {
@@ -440,9 +441,6 @@ function displayPoint(data, audit) {
   if (remarks) {
     $('#remarks_box').show(); 
     $('#remarks_content').text(remarks);
-  } else {
-    $('#remarks_box').hide();
-    $('#remarks_content').text("");
   }
 
   // Render the table
@@ -514,6 +512,7 @@ function hidePoint() {
   $('#hint').hide();
   $('#last_action').hide();
   $('#fixme_box').hide();
+  $('#remarks_box').hide();
   $('#title').html(defaultTitle);
   if (marker2) {
     map1.removeLayer(marker2);
