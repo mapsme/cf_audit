@@ -1,0 +1,28 @@
+version: '3.3'
+services:
+  cf-audit: &auditor
+    build: .
+    environment:
+      # uncomment following line to enable Debugging
+      # DEBUG: yes
+      DATABASE_URI: 'postgresql://cf_audit:pw@database:5432/cf_audit'
+      OAUTH_KEY: 'your-key'
+      OAUTH_SECRET: 'your-secret'
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+  migrate:
+    <<: *auditor
+    command: python3 migrate.py
+    ports: []
+  database:
+    image: postgres:10
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: cf_audit
+      POSTGRES_PASSWORD: pw
+      POSTGRES_DB: cf_audit
+      ADMINS: '290271'
+
