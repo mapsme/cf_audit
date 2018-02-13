@@ -3,7 +3,7 @@ services:
   cf-audit: &auditor
     build: .
     environment:
-      # uncomment following line to enable Debugging
+      # uncomment following line to enable debugging
       # DEBUG: yes
       DATABASE_URI: 'postgresql://cf_audit:pw@database:5432/cf_audit'
     env_file:
