@@ -186,24 +186,13 @@ function displayPoint(data, audit) {
     return;
   }
 
-  function pop(obj, key) {
-    if (obj.hasOwnProperty(key)) {
-      var result = obj[key];
-      // If the property can't be deleted fail with an error.
-      if (!delete obj[key]) { throw new Error(); }
-      return result;
-    } else {
-      return '';
-    }
-  }
-
   var movePos = audit['move'], latlon, rlatlon, rIsOSM = false,
       coord = data['geometry']['coordinates'],
       props = data['properties'],
       canMove = !readonly && (props['can_move'] || props['action'] == 'create'),
       refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
       wereCoord = props['were_coords'],
-      remarks = pop(props, 'remarks');
+      remarks = props['remarks'];
     
   var $good = $('#good');
   $good.text('Good');
@@ -449,7 +438,11 @@ function displayPoint(data, audit) {
 
   // render remarks, if any. 
   if (remarks) {
-    document.getElementById("remarks_box").innerHTML = "<h3>Remarks</h3><p>" + remarks + "</p>";
+    $('#remarks_box').show(); 
+    $('#remarks_content').text(remarks);
+  } else {
+    $('#remarks_box').hide();
+    $('#remarks_content').text("");
   }
 
   // Render the table
