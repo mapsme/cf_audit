@@ -91,6 +91,7 @@ $(function() {
   defaultTitle = $('#title').html();
   $('#hint').hide();
   $('#last_action').hide();
+  $('#remarks_box').hide();
   map1.on('zoomend', function() {
     if (map1.getZoom() >= 10) {
       if (readonly) {
@@ -191,7 +192,8 @@ function displayPoint(data, audit) {
       props = data['properties'],
       canMove = !readonly && (props['can_move'] || props['action'] == 'create'),
       refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
-      wereCoord = props['were_coords'];
+      wereCoord = props['were_coords'],
+      remarks = props['remarks'];
 
   var $good = $('#good');
   $good.text('Good');
@@ -435,6 +437,14 @@ function displayPoint(data, audit) {
     }
   }
 
+  // render remarks, if any. 
+  if (remarks) {
+    $('#remarks_box').show(); 
+    $('#remarks_content').text(remarks);
+  } else {
+    $('#remarks_box').hide();
+  }
+
   // Render the table
   function esc(s) {
     s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -504,6 +514,7 @@ function hidePoint() {
   $('#hint').hide();
   $('#last_action').hide();
   $('#fixme_box').hide();
+  $('#remarks_box').hide();
   $('#title').html(defaultTitle);
   if (marker2) {
     map1.removeLayer(marker2);
