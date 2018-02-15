@@ -13,7 +13,7 @@ All this was written by Ilya Zverev for MAPS.ME. Published under Apache License 
 You can run this project locally (or using an adapted version
 on your server as well) using the provided docker-compose file.
 
-1. Create an application on https://www.openstreetmap.org/user/<your-osm-user-name>/oauth_clients, 
+1. Create an application on `https://www.openstreetmap.org/user/<your-osm-user-name>/oauth_clients`
   and use `localhost:8080` as your main application URL.
 
 1. Copy the "Consumer Key" respectively the "Consumer Secret" to a new file called `.env` as follows:
