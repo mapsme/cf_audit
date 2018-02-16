@@ -19,17 +19,14 @@ on your server as well) using the provided docker-compose file.
 1. Copy the "Consumer Key" respectively the "Consumer Secret" to a new file called `.env` as follows:
 
     ```bash
-    OAUTH_KEY='your-key'
-    OAUTH_SECRET='your-secret'
+    OAUTH_KEY=<your-key>
+    OAUTH_SECRET=<your-secret>
+    SECRET_KEY=<secret-key-do-not-share>
     ```
 
 1. Then start it on your machine using docker-compose: `docker-compose up --build`.
 
 Open your browser at `localhost:8080` and start using it.
 
-In case you don't have admin-rights, login first, then execute a database query as follows
-(replace `<your-id>` with your user osm-id):
-
-```bash
-docker-compose exec database psql -U postgres cf_audit -c 'UPDATE public."user" SET admin = TRUE WHERE uid = <your-id>;'
-```
+In case you don't have admin-rights, uncomment the line in the `docker-compose.yml` with `# ADMINS: ''`.
+You can add multiple admins by separating the values with a comma (`,`), ie. `ADMINS: '1234,98765'`

@@ -6,6 +6,8 @@ services:
       # uncomment following line to enable debugging
       # DEBUG: yes
       DATABASE_URI: 'postgresql://cf_audit:pw@database:5432/cf_audit'
+      # enter the osm-ids here, which should get admin-rights.
+      ADMINS: ''
     env_file:
       - .env
     ports:
@@ -14,7 +16,7 @@ services:
       - database
   migrate:
     <<: *auditor
-    command: python3 migrate.py
+    command: python migrate.py
     ports: []
   database:
     image: postgres:10
@@ -22,5 +24,4 @@ services:
       POSTGRES_USER: cf_audit
       POSTGRES_PASSWORD: pw
       POSTGRES_DB: cf_audit
-      ADMINS: '290271'
 
