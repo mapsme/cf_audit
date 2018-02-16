@@ -8,7 +8,7 @@ MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 16*1024*1024))
 
 ADMINS = os.environ.get('ADMINS')
 if ADMINS:
-    ADMINS = set(ADMINS.split(','))
+    ADMINS = set([int(adm_id) for adm_id in ADMINS.split(',')])
 
 # Override these (and anything else) in config_local.py or 
 # set environment variable accordingly.
