@@ -19,4 +19,4 @@ EXPOSE 8080
 COPY . /opt/cf_audit
 WORKDIR /opt/cf_audit
 ENTRYPOINT [ "dockerize", "-wait", "tcp://database:5432" ]
-CMD [ "uwsgi", "--chdir", "/opt/cf_audit/", "--http", ":8080", "--wsgi-file", "app.wsgi" ]
+CMD [ "uwsgi", "--chdir", "/opt/cf_audit/", "--http", ":8080", "--wsgi-file", "cf_audit.wsgi" ]

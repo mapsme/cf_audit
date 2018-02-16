@@ -1,1 +1,0 @@
-from www import app as application
