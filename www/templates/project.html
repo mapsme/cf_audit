@@ -35,7 +35,8 @@
 {% endif %}
 {% if admin %}
 <p><a href="{{ url_for('add_project', pid=project.id) }}">Edit</a>,
-<a href="{{ url_for('export_audit', pid=project.id) }}">Download Audit</a></p>
+<a href="{{ url_for('export_audit', pid=project.id) }}">Download Audit</a>,
+<a href="{{ url_for('external_audit', pid=project.id) }}">Audit for Source</a></p>
 {% endif %}
 <div id="progress"><span id="p_val2"></span><span id="p_val1"></span></div>
 <ul>

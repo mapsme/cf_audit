@@ -496,6 +496,48 @@ def export_audit(pid):
         headers={'Content-Disposition': 'attachment;filename=audit_{}.json'.format(project.name)})
 
 
+@app.route('/external_audit/<int:pid>')
+def external_audit(pid):
+    project = Project.get(Project.id == pid)
+    if not is_admin(get_user(), project):
+        return redirect(url_for('front'))
+    query = Feature.select().where(Feature.project == project, Feature.audit.is_null(False))
+    result = {}
+    for feat in query:
+        audit = json.loads(feat.audit or {})
+        props = json.loads(feat.feature)['properties']
+        eaudit = {}
+        if 'move' in audit:
+            if audit['move'] == 'osm':
+                if 'were_coords' in props['were_coords']:
+                    eaudit['move'] = props['were_coords']
+            elif isinstance(audit['move'], list) and len(audit['move']) == 2:
+                eaudit['move'] = audit['move']
+        if 'keep' in audit:
+            keep = {}
+            for k in audit['keep']:
+                orig = None
+                if 'tags_deleted.'+k in props:
+                    orig = props['tags_deleted.'+k]
+                elif 'tags_changed.'+k in props:
+                    orig = props['tags_changed.'+k]
+                    orig = orig[:orig.find(' -> ')]
+                if orig:
+                    keep[k] = orig
+            if keep:
+                eaudit['keep'] = keep
+        if audit.get('skip'):
+            if audit.get('comment', '').lower() != 'duplicate':
+                eaudit['skip'] = audit.get('comment', '<no reason>')
+        if eaudit:
+            result[feat.ref] = eaudit
+    return app.response_class(
+        json.dumps(result, ensure_ascii=False, indent=1, sort_keys=True),
+        mimetype='application/json', headers={
+            'Content-Disposition': 'attachment;filename=ext_audit_{}.json'.format(project.name)
+        })
+
+
 @app.route('/admin')
 def admin():
     user = get_user()
