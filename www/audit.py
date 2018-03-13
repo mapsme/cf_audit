@@ -578,6 +578,8 @@ def all_features(pid):
         for f in query:
             features.append([f.ref, [f.lat/1e7, f.lon/1e7], f.action])
         project.features_js = json.dumps(features, ensure_ascii=False).encode('utf-8')
+        if database.is_closed():
+            database.connect()
         project.save()
     return app.response_class('features = {}'.format(project.features_js),
                               mimetype='application/javascript')
