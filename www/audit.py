@@ -569,23 +569,21 @@ def api():
     return 'API Endpoint'
 
 
-@app.route('/api/features/<int:pid>')
+@app.route('/api/features/<int:pid>.js')
 def all_features(pid):
     project = Project.get(Project.id == pid)
     if not project.features_js:
-        query = Feature.select().where(Feature.project == project)
+        query = Feature.select(Feature.ref, Feature.lat, Feature.lon, Feature.action).where(
+                Feature.project == project).tuples()
         features = []
-        for f in query:
-            features.append([f.ref, [f.lat/1e7, f.lon/1e7], f.action])
+        for ref, lat, lon, action in query:
+            features.append([ref, [lat/1e7, lon/1e7], action])
         project.features_js = json.dumps(features, ensure_ascii=False).encode('utf-8')
         try:
             project.save()
         except OperationalError:
-            # For a case when the operation takes too long and MySQL closes the idle connection
-            if not database.is_closed():
-                database.close()
-            database.connect()
-            project.save()
+            # Sometimes wait is too long and MySQL disappears
+            pass
     return app.response_class('features = {}'.format(project.features_js),
                               mimetype='application/javascript')
 
