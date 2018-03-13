@@ -164,11 +164,7 @@ def project(name):
 @app.route('/browse/<name>/<ref>')
 def browse(name, ref=None):
     project = Project.get(Project.name == name)
-    query = Feature.select().where(Feature.project == project)
-    features = []
-    for f in query:
-        features.append([f.ref, f.lon, f.lat, f.action])
-    return render_template('browse.html', project=project, features=features, ref=ref)
+    return render_template('browse.html', project=project, ref=ref)
 
 
 @app.route('/run/<name>')

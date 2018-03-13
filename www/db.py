@@ -10,6 +10,7 @@ from playhouse.migrate import (
 )
 from playhouse.db_url import connect
 import config
+import logging
 
 database = connect(config.DATABASE_URI)
 if 'mysql' in config.DATABASE_URI:
@@ -129,5 +130,6 @@ def migrate():
         v.version = 3
         v.save()
 
+    logging.info('Migrated the database to version %s', v.version)
     if v.version != LAST_VERSION:
         raise ValueError('LAST_VERSION in db.py should be {}'.format(v.version))
