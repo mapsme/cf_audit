@@ -2,7 +2,7 @@ from www import app
 from .db import database, User, Feature, Project, Task, fn_Random
 from flask import session, url_for, redirect, request, render_template, flash, jsonify
 from flask_oauthlib.client import OAuth
-from peewee import fn
+from peewee import fn, OperationalError
 import json
 import config
 import codecs
@@ -577,10 +577,15 @@ def all_features(pid):
         features = []
         for f in query:
             features.append([f.ref, [f.lat/1e7, f.lon/1e7], f.action])
-        # Query the project again, because the connection may be stale
-        project = Project.get(Project.id == pid)
         project.features_js = json.dumps(features, ensure_ascii=False).encode('utf-8')
-        project.save()
+        try:
+            project.save()
+        except OperationalError:
+            # For a case when the operation takes too long and MySQL closes the idle connection
+            if not database.is_closed():
+                database.close()
+            database.connect()
+            project.save()
     return app.response_class('features = {}'.format(project.features_js),
                               mimetype='application/javascript')
 
