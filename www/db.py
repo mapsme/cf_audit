@@ -43,6 +43,7 @@ class Project(BaseModel):
     overlays = TextField(null=True)
     audit = TextField(null=True)
     validate_modified = BooleanField(default=False)
+    features_js = TextField(null=True)
 
 
 class Feature(BaseModel):
@@ -63,7 +64,10 @@ class Task(BaseModel):
     skipped = BooleanField(default=False)
 
 
-LAST_VERSION = 2
+# ------------------------------ MIGRATION ------------------------------
+
+
+LAST_VERSION = 3
 
 
 class Version(BaseModel):
@@ -115,6 +119,14 @@ def migrate():
             migrator.add_column(Project._meta.db_table, Project.audit.db_column, Project.audit),
         )
         v.version = 2
+        v.save()
+
+    if v.version == 2:
+        peewee_migrate(
+            migrator.add_column(Project._meta.db_table, Project.features_js.db_column,
+                                Project.features_js),
+        )
+        v.version = 3
         v.save()
 
     if v.version != LAST_VERSION:

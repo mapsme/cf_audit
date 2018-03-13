@@ -369,6 +369,7 @@ def update_features(project, features, audit):
         q.execute()
     project.bbox = ','.join([str(x) for x in (minlon, minlat, maxlon, maxlat)])
     project.feature_count = Feature.select().where(Feature.project == project).count()
+    project.features_js = None
     project.save()
 
 
@@ -575,12 +576,15 @@ def api():
 @app.route('/api/features/<int:pid>')
 def all_features(pid):
     project = Project.get(Project.id == pid)
-    query = Feature.select().where(Feature.project == project)
-    features = []
-    for f in query:
-        features.append([f.ref, [f.lat/1e7, f.lon/1e7], f.action])
-    return app.response_class('features = {}'.format(json.dumps(
-        features, ensure_ascii=False).encode('utf-8')), mimetype='application/javascript')
+    if not project.features_js:
+        query = Feature.select().where(Feature.project == project)
+        features = []
+        for f in query:
+            features.append([f.ref, [f.lat/1e7, f.lon/1e7], f.action])
+        project.features_js = json.dumps(features, ensure_ascii=False).encode('utf-8')
+        project.save()
+    return app.response_class('features = {}'.format(project.features_js),
+                              mimetype='application/javascript')
 
 
 class BBoxes(object):
