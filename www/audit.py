@@ -79,6 +79,11 @@ def front():
                            admin=is_admin(user), is_admin=local_is_admin)
 
 
+@app.route('/robots.txt')
+def robots():
+    return app.response_class('User-agent: *\nDisallow: /', mimetype='text/plain')
+
+
 @app.route('/login')
 def login():
     if 'osm_token' not in session:
