@@ -2,7 +2,11 @@
 import os
 import sys
 import codecs
-from www.util import *
+import datetime
+import logging
+import json
+from www.db import Project, database
+from www.util import update_features, update_features_cache
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 sys.path.insert(0, BASE_DIR)
@@ -15,22 +19,31 @@ if len(sys.argv) < 3:
     print "Usage: {} <project_id> <features.json> [<audit.json>]".format(sys.argv[0])
     sys.exit(1)
 
-with codecs.open(sys.argv[2], 'r', 'utf-8') as f:
-    features = json.load(f)['features']
-if not features:
-    print "No features read"
-    sys.exit(2)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s', datefmt='%H:%M:%S')
+logging.info('Reading JSON files')
+
+if sys.argv[2] == '-':
+    features = []
+else:
+    with codecs.open(sys.argv[2], 'r', 'utf-8') as f:
+        features = json.load(f)['features']
 
 audit = None
 if len(sys.argv) > 3:
     with codecs.open(sys.argv[3], 'r', 'utf-8') as f:
         audit = json.load(f)
 
+if not features and not audit:
+    logging.error("No features read")
+    sys.exit(2)
+
 try:
     project = Project.get(Project.name == sys.argv[1])
 except Project.DoesNotExist:
-    print "No such project: {}".format(sys.argv[1])
+    logging.error("No such project: %s", sys.argv[1])
     sys.exit(2)
+
+logging.info('Updating features')
 
 proj_audit = json.loads(project.audit or '{}')
 if audit:
@@ -41,6 +54,6 @@ project.updated = datetime.datetime.utcnow().date()
 with database.atomic():
     update_features(project, features, proj_audit)
 
-update_audit(project)
+logging.info('Updating the feature cache')
 update_features_cache(project)
 project.save()

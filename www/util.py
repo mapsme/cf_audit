@@ -1,4 +1,4 @@
-from .db import database, User, Feature, Project, Task, fn_Random
+from .db import Feature, Task
 import json
 import hashlib
 
@@ -6,7 +6,10 @@ import hashlib
 def update_features(project, features, audit):
     curfeats = Feature.select(Feature).where(Feature.project == project)
     ref2feat = {f.ref: f for f in curfeats}
-    deleted = set(ref2feat.keys())
+    if features:
+        deleted = set(ref2feat.keys())
+    else:
+        deleted = set()
     updated = set()
     minlat = minlon = 180.0
     maxlat = maxlon = -180.0

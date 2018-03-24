@@ -375,13 +375,13 @@ def upload_project():
         project.updated = datetime.datetime.utcnow().date()
     project.save()
 
-    if features:
+    if features or audit:
         with database.atomic():
             update_features(project, features, proj_audit)
 
-    if project.feature_count == 0:
+    if project.feature_count == 0 and not pid:
         project.delete_instance()
-        return add_flash('Zero features in the JSON file')
+        return add_flash(pid, 'Zero features in the JSON file')
 
     return redirect(url_for('project', name=project.name))
 
