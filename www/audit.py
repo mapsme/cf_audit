@@ -1,5 +1,6 @@
 from www import app
 from .db import database, User, Feature, Project, Task, fn_Random
+from .util import update_features, update_audit, update_features_cache
 from flask import session, url_for, redirect, request, render_template, flash, jsonify
 from flask_oauthlib.client import OAuth
 from peewee import fn, OperationalError
@@ -7,7 +8,6 @@ import json
 import config
 import codecs
 import datetime
-import hashlib
 import math
 import os
 
@@ -309,84 +309,6 @@ def add_project(pid=None):
     return render_template('newproject.html', project=project)
 
 
-def update_features(project, features, audit):
-    curfeats = Feature.select(Feature).where(Feature.project == project)
-    ref2feat = {f.ref: f for f in curfeats}
-    deleted = set(ref2feat.keys())
-    minlat = minlon = 180.0
-    maxlat = maxlon = -180.0
-    for f in features:
-        data = json.dumps(f, ensure_ascii=False, sort_keys=True)
-        md5 = hashlib.md5()
-        md5.update(data.encode('utf-8'))
-        md5_hex = md5.hexdigest()
-
-        coord = f['geometry']['coordinates']
-        if coord[0] < minlon:
-            minlon = coord[0]
-        if coord[0] > maxlon:
-            maxlon = coord[0]
-        if coord[1] < minlat:
-            minlat = coord[1]
-        if coord[1] > maxlat:
-            maxlat = coord[1]
-
-        if 'ref_id' in f['properties']:
-            ref = f['properties']['ref_id']
-        else:
-            ref = '{}{}'.format(f['properties']['osm_type'], f['properties']['osm_id'])
-
-        update = False
-        if ref in ref2feat:
-            deleted.remove(ref)
-            feat = ref2feat[ref]
-            if feat.feature_md5 != md5_hex:
-                update = True
-        else:
-            feat = Feature(project=project, ref=ref)
-            feat.validates_count = 0
-            update = True
-
-        f_audit = audit.get(ref)
-        if f_audit:
-            f_audit = json.dumps(f_audit, ensure_ascii=False, sort_keys=True)
-            if f_audit != feat.audit:
-                feat.audit = f_audit
-                update = True
-
-        if update:
-            feat.feature = data
-            feat.feature_md5 = md5_hex
-            feat.lon = round(coord[0] * 1e7)
-            feat.lat = round(coord[1] * 1e7)
-            feat.action = f['properties']['action'][0]
-            if feat.validates_count > 0:
-                feat.validates_count = 0
-                Task.delete().where(Task.feature == feat).execute()
-            feat.save()
-
-    if deleted:
-        q = Feature.delete().where(Feature.ref << list(deleted))
-        q.execute()
-    project.bbox = ','.join([str(x) for x in (minlon, minlat, maxlon, maxlat)])
-    project.feature_count = Feature.select().where(Feature.project == project).count()
-    project.features_js = None
-    project.save()
-
-
-def update_audit(project):
-    audit = json.loads(project.audit or '{}')
-    changed = False
-    query = Feature.select(Feature.ref, Feature.audit).where(
-        Feature.project == project, Feature.audit.is_null(False)).tuples()
-    for feat in query:
-        if feat[1]:
-            changed = True
-            audit[feat[0]] = json.loads(feat[1])
-    if changed:
-        project.audit = json.dumps(audit, ensure_ascii=False)
-
-
 @app.route('/newproject/upload', methods=['POST'])
 def upload_project():
     def add_flash(pid, msg):
@@ -578,12 +500,7 @@ def api():
 def all_features(pid):
     project = Project.get(Project.id == pid)
     if not project.features_js:
-        query = Feature.select(Feature.ref, Feature.lat, Feature.lon, Feature.action).where(
-                Feature.project == project).tuples()
-        features = []
-        for ref, lat, lon, action in query:
-            features.append([ref, [lat/1e7, lon/1e7], action])
-        project.features_js = json.dumps(features, ensure_ascii=False).encode('utf-8')
+        update_features_cache(project)
         try:
             project.save()
         except OperationalError:
