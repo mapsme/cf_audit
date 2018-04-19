@@ -30,10 +30,10 @@ $(function() {
     'Esri': L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: '<a href="https://wiki.openstreetmap.org/wiki/Esri">Terms & Feedback</a>', maxZoom: 22
     }),
-    'DG Std': L.tileLayer("https://{s}.tiles.mapbox.com/v4/digitalglobe.0a8e44ba/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqOGRmNW9qZjBudmgzMnA1a294OGRtNm8ifQ.06mo-nDisy4KmqjYxEVwQw", {
+    'DG Std': L.tileLayer("https://{s}.tiles.mapbox.com/v4/digitalglobe.0a8e44ba/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqZGFrZ3pjczNpaHYycXFyMGo0djY3N2IifQ.90uebT4-ow1uqZKTUrf6RQ", {
       attribution: '<a href="https://wiki.openstreetmap.org/wiki/DigitalGlobe">Terms & Feedback</a>', maxZoom: 22
     }),
-    'DG Pr': L.tileLayer("https://{s}.tiles.mapbox.com/v4/digitalglobe.316c9a2e/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqOGRmNXltOTBucm0yd3BtY3E5czl6NmYifQ.qJJsPgCjyzMCm3YG3YWQBQ", {
+    'DG Pr': L.tileLayer("https://{s}.tiles.mapbox.com/v4/digitalglobe.316c9a2e/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqZGFrZ2c2dzFlMWgyd2x0ZHdmMDB6NzYifQ.9Pl3XOO82ArX94fHV289Pg", {
       attribution: '<a href="https://wiki.openstreetmap.org/wiki/DigitalGlobe">Terms & Feedback</a>', maxZoom: 22
     })
   };
