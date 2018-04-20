@@ -26,7 +26,7 @@
 {% endblock %}
 {% block content %}
 <h1>{{ project.title }}</h1>
-<p class="description">{{ desc | safe }}</p>
+<div class="description">{{ desc | safe }}</div>
 {% if project.url %}<p><a href="{{ project.url }}">Additional info →</a></p>{% endif %}
 <p><a href="{{ url_for('browse', name=project.name) }}">Browse points</a>
 (<a href="{{ url_for('table', name=project.name) }}">as a table</a>)</p>
