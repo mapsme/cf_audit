@@ -247,8 +247,8 @@ function displayPoint(data, audit) {
 
   // Pan the map and draw a marker
   if (readonly) {
-    var $editThis = $('#editthis'),
-        lastView = [map1.getCenter(), map1.getZoom()];
+    var $editThis = $('#editthis');
+    lastView = [map1.getCenter(), map1.getZoom()];
     if (history.state != data.ref) {
       history.pushState(data.ref, data.ref + ' — ' + document.title,
         browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
