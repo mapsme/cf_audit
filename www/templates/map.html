@@ -5,12 +5,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.2.0/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.2.0/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="{{ dated_url_for('static', filename='style.css') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='Control.MiniMap.min.css') }}" />
     <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.2.0/dist/leaflet.markercluster.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
     <script src="{{ url_for('static', filename='Bing.js') }}"></script>
-    <script src="{{ url_for('static', filename='Control.MiniMap.min.js') }}"></script>
     <script src="{{ url_for('static', filename='PermalinkAttribution.js') }}"></script>
     <script>
       endpoint = '{{ url_for('api') }}';
@@ -19,15 +17,14 @@
       imagesPath = '{{ url_for('static', filename='images') }}';
       featureTemplateUrl = '{{ url_for('tasks', name=project.name, ref='tmpl') }}';
       browseTemplateUrl = '{{ url_for('browse', name=project.name, ref='tmpl') }}';
-      readonly = true;
     </script>
     <script src="{{ url_for('all_features', pid=project.id) }}"></script>
-    <script src="{{ dated_url_for('static', filename='audit.js') }}"></script>
+    <script src="{{ dated_url_for('static', filename='map.js') }}"></script>
 {% endblock %}
 {% block content %}
-    <div id="left">
-      <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a>{% if project.can_validate %}<span id="editthis">, <a href="#" id="editlink">edit this</a></span>{% endif %}</p>
-      <h1 id="title">{{ project.title }}</h1>
+    <div id="map"></div>
+    <div id="popup">
+      {% if project.can_validate %}<p><span id="editthis"><a href="#" id="editlink">Edit this</a></span></p>{% endif %}
       <p id="hint">
         <span id="transparent">Transparent marker is the <span id="tr_which"></span> point location.</span>
       </p>
@@ -36,12 +33,5 @@
         </table>
       </div>
       <p id="last_action">The last reviewer rejected this change with the verdict "<span id="last_verdict"></span>".</p>
-      <div id="buttons">
-        <button id="zoom_all" class="b_zoom b_readonly">Zoom to dataset</button>
-        <button id="zoom_out" class="b_zoom b_readonly">Zoom back</button>
-        <button id="random" class="b_readonly">Random feature</button>
-      </div>
     </div>
-    <div id="map1"></div>
-    <div id="map2"></div>
 {% endblock %}

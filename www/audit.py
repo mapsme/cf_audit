@@ -172,6 +172,13 @@ def browse(name, ref=None):
     return render_template('browse.html', project=project, ref=ref)
 
 
+@app.route('/map/<name>')
+@app.route('/map/<name>/<ref>')
+def show_map(name, ref=None):
+    project = Project.get(Project.name == name)
+    return render_template('map.html', project=project, ref=ref)
+
+
 @app.route('/run/<name>')
 @app.route('/run/<name>/<ref>')
 def tasks(name, ref=None):

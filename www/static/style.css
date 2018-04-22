@@ -17,6 +17,18 @@ html, body {
   bottom: 0;
 }
 
+#map {
+  height: 100%;
+}
+
+#popup {
+  display: none;
+}
+
+.notagedit input {
+  display: none;
+}
+
 #left {
   width: 35%;
   padding: 0.5em;
