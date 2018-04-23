@@ -1,7 +1,7 @@
 var map, smarker, marker;
 
 $(function() {
-  map = L.map('map', {minZoom: 4, maxZoom: 19});
+  map = L.map('map', {minZoom: 4, maxZoom: 19, zoomControl: false, attributionControl: false});
   L.control.permalinkAttribution().addTo(map);
   map.attributionControl.setPrefix('');
   map.setView([20, 5], 7);
@@ -23,7 +23,7 @@ $(function() {
       attribution: '<a href="https://wiki.openstreetmap.org/wiki/DigitalGlobe">Terms & Feedback</a>', maxZoom: 22
     })
   };
-  L.control.layers(imageryLayers, {}, {collapsed: false, position: 'topright'}).addTo(map);
+  L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map);
   imageryLayers['OSM'].addTo(map);
 
   if (features) {
@@ -60,15 +60,27 @@ $(function() {
     map.addLayer(fl);
     map.fitBounds(fl.getBounds());
   }
+  L.hash(map).update();
 
-  // TODO: add control buttons
+  var ProjectButton = L.Control.extend({
+    onAdd: function(map) {
+      var container = L.DomUtil.create('div', 'leaflet-bar'),
+          button = L.DomUtil.create('a', '', container);
+      button.href = projectUrl;
+      button.innerHTML = '← to the project';
+      button.style.width = 'auto';
+      button.style.padding = '0 4px';
+      return container;
+    }
+  });
+  map.addControl(new ProjectButton({ position: 'topleft' }));
+  L.control.zoom({position: 'topleft'}).addTo(map);
   
   if (forceRef)
     query({ref: forceRef});
 });
 
 function query(target) {
-  target.setPopupContent('... downloading ...');
   $.ajax(endpoint + '/feature/' + projectId, {
     contentType: 'application/json',
     data: {ref: target.ref},
@@ -78,7 +90,11 @@ function query(target) {
     success: function(data) {
       data.feature.ref = data.ref;
       populatePopup(data.feature, data.audit || {});
-      target.setPopupContent($('#popup').html());
+      var p = target.getPopup();
+      if (p) {
+        p.setContent($('#popup').html());
+      } else
+        onHidePopup();
     }
   });
 }
