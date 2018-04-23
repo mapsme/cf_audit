@@ -265,7 +265,7 @@ function populatePopup(data, audit) {
   for (var i = 0; i < keys.length; i++) {
     key = keys[i];
     if (key.length == 2)
-      rows += '<tr class="notagedit"><th>' + esc(key[0]) + '</th><td>' + esc(key[1]) + '</td></tr>';
+      rows += '<tr class="notagedit single"><th>' + esc(key[0]) + '</th><td>' + esc(key[1]) + '</td></tr>';
     else {
       rows += '<tr class="notagedit"><th rowspan="2">' + esc(key[0]) + '</th>';
       rows += '<td>' + (!key[1] ? notset : esc(key[1])) + '&nbsp;<input type="radio" name="r'+i+'" value="1-'+i+'"></td>';

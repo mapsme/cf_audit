@@ -84,7 +84,7 @@ h1 {
   border-top: none;
 }
 
-.tags th, tr.lower {
+.tags th, tr.lower, tr.single {
   border-bottom: 1px solid lightgrey;
 }
 
