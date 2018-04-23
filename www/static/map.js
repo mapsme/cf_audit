@@ -60,7 +60,6 @@ $(function() {
     map.addLayer(fl);
     map.fitBounds(fl.getBounds());
   }
-  L.hash(map).update();
 
   var ProjectButton = L.Control.extend({
     onAdd: function(map) {
@@ -75,17 +74,18 @@ $(function() {
   });
   map.addControl(new ProjectButton({ position: 'topleft' }));
   L.control.zoom({position: 'topleft'}).addTo(map);
+  var hash = L.hash(map);
   
   if (forceRef) {
     fl.eachLayer(function(layer) {
       if (layer.ref == forceRef) {
-        if (map.getZoom() < 10)
-          map.setZoom(13);
-        if (!map.getBounds().contains(layer.getLatLng()))
-          map.panTo(layer.getLatLng(), { animate: false });
-        layer.openPopup();
+        fl.zoomToShowLayer(layer, function() {
+          layer.openPopup();
+        })
       }
     });
+  } else {
+    hash.update();
   }
 });
 
