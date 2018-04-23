@@ -26,20 +26,20 @@
     <div id="left">
       <p class="toproject"><a href="{{ url_for('project', name=project.name) }}">← to the project</a>, <a href="#" id="browselink">browse around</a></p>
       <h1 id="title">{{ project.title }}</h1>
-      <p id="last_action">The last reviewer rejected this change with the verdict "<span id="last_verdict"></span>".</p>
-      <p id="hint">
+      <p id="last_action" class="last_action">The last reviewer rejected this change with the verdict "<span id="last_verdict"></span>".</p>
+      <p id="hint" class="hint">
         <span id="canmove">You can move the marker to a better location. Imagery may be misaligned.</span>
         <span id="transparent">Semi-transparent marker is the location from <span id="tr_which"></span>.</span>
       </p>
-      <div id="tags_wrapper">
-        <table id="tags">
+      <div class="tags_wrapper">
+        <table id="tags" class="tags">
         </table>
       </div>
       <div id="fixme_box">
         <p>Value for the <tt>fixme</tt> tag if needed:<br>
         <input type="text" id="fixme"></p>
       </div>
-      <div id="remarks_box">
+      <div id="remarks_box" class="remarks_box">
         <b>Remarks:</b> <span id="remarks_content"></span>
       </div>
       <div id="buttons">

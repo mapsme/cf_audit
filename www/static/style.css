@@ -54,67 +54,67 @@ h1 {
   font-size: 26px;
 }
 
-#hint {
+.hint {
   margin-top: 0.5em;
   font-style: italic;
   color: green;
 }
 
-#last_action {
+.last_action {
   font-style: italic;
   color: darkred;
 }
 
-#tags_wrapper {
+.tags_wrapper {
   margin: 1em 0;
   overflow-x: auto;
   width: 95%;
 }
 
-#tags {
+.tags {
   border-collapse: collapse;
 }
 
-#tags tr {
+.tags tr {
   border: 1px solid lightgrey;
   border-bottom: none;
 }
 
-#tags tr.lower {
+.tags tr.lower {
   border-top: none;
 }
 
-#tags th, tr.lower {
+.tags th, tr.lower {
   border-bottom: 1px solid lightgrey;
 }
 
-#tags th {
+.tags th {
   text-align: left;
   padding-right: 1em;
 }
 
-#tags .tagedit td {
+.tags .tagedit td {
   cursor: pointer;
 }
 
-#tags td {
+.tags td {
   padding: 2px 0;
 }
 
-#tags td a {
+.tags td a {
   color: inherit;
 }
 
-#tags td.red { background-color: pink; }
-#tags td.green { background-color: lightgreen; }
-#tags td.yellow { background-color: yellow; }
+.tags td.red { background-color: pink; }
+.tags td.green { background-color: lightgreen; }
+.tags td.yellow { background-color: yellow; }
 
-#tags .notset {
+.tags .notset {
   color: lightgrey;
   font-style: italic;
 }
 
-#tags td.red .notset { color: grey; }
+.tags td.red .notset { color: grey; }
 
 td input {
   float: right;

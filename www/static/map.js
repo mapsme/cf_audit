@@ -76,11 +76,23 @@ $(function() {
   map.addControl(new ProjectButton({ position: 'topleft' }));
   L.control.zoom({position: 'topleft'}).addTo(map);
   
-  if (forceRef)
-    query({ref: forceRef});
+  if (forceRef) {
+    fl.eachLayer(function(layer) {
+      if (layer.ref == forceRef) {
+        if (map.getZoom() < 10)
+          map.setZoom(13);
+        if (!map.getBounds().contains(layer.getLatLng()))
+          map.panTo(layer.getLatLng(), { animate: false });
+        layer.openPopup();
+      }
+    });
+  }
 });
 
 function query(target) {
+  if (!target.isPopupOpen())
+    target.openPopup();
+
   $.ajax(endpoint + '/feature/' + projectId, {
     contentType: 'application/json',
     data: {ref: target.ref},
@@ -90,9 +102,8 @@ function query(target) {
     success: function(data) {
       data.feature.ref = data.ref;
       populatePopup(data.feature, data.audit || {});
-      var p = target.getPopup();
-      if (p) {
-        p.setContent($('#popup').html());
+      if (target.isPopupOpen && target.isPopupOpen()) {
+        target.setPopupContent($('#popup').html().replace(/id="[^"]+"/g, ''));
       } else
         onHidePopup();
     }
@@ -213,9 +224,7 @@ function populatePopup(data, audit) {
         var i = props[key].indexOf(' -> ');
         keys.push([k, props[key].substr(0, i), props[key].substr(i+4), true]);
       } else if (key.startsWith('tags.')) {
-        if (props['action'] == 'create')
-          keys.push([k, '', props[key], true]);
-        else if (!skip[k])
+        if (!skip[k])
           keys.push([k, props[key]]);
       }
     }
@@ -280,8 +289,8 @@ function populatePopup(data, audit) {
       return;
     var idx = +$radio.val().substr(2),
         which = +$radio.val()[0],
-        row = keys[idx],
-        selected = (which == 1 && !row[4]) || (which == 2 && row[4]);
+        row = keys[idx];
+    var selected = (which == 1 && !row[4]) || (which == 2 && row[4]);
     if (selected) {
       $(this).addClass(cellColor(row, which));
     }
