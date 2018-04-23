@@ -4,7 +4,7 @@ $(function() {
   map = L.map('map', {minZoom: 4, maxZoom: 19, zoomControl: false, attributionControl: false});
   L.control.permalinkAttribution().addTo(map);
   map.attributionControl.setPrefix('');
-  map.setView([20, 5], 7);
+  map.setView([20, 5], 7, {animate: false});
 
   var imageryLayers = {
     "OSM": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

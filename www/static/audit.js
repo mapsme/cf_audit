@@ -2,28 +2,14 @@ var map1, map2, marker1, marker2, smarker1, smarker2, feature, keys, lastView, d
 
 $(function() {
   map1 = L.map('map1', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false, attributionControl: false});
-  map2 = L.map('map2', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
   L.control.permalinkAttribution().addTo(map1);
   map1.attributionControl.setPrefix('');
-  map2.attributionControl.setPrefix('');
-
-  L.control.zoom({position: 'topright'}).addTo(map1);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
-  }).addTo(map1);
-
-  map2.setView([20, 5], 7);
-  var miniLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
-  });
-  var miniMap = new L.Control.MiniMap(miniLayer, {
-    position: 'topright',
-    height: 100,
-    zoomLevelOffset: -6,
-    minimized: true
-  }).addTo(map2);
+  map1.setView([20, 5], 7, {animate: false});
 
   var imageryLayers = {
+    "OSM": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
+    }),
     "Bing": L.bingLayer("AqXL21QURkJrJz4m4-IJn2smkeX5KIYsdhiNIH97boShcUMagCnQPn3JMYZjFEoH", {
       type: "Aerial", maxZoom: 21
     }),
@@ -37,24 +23,44 @@ $(function() {
       attribution: '<a href="https://wiki.openstreetmap.org/wiki/DigitalGlobe">Terms & Feedback</a>', maxZoom: 22
     })
   };
-  L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2);
-  imageryLayers['Bing'].addTo(map2);
+  imageryLayers['OSM'].addTo(map1);
 
-  var move = true;
-  map1.on('move', function() {
-    if (move) {
-      move = false;
-      map2.setView(map1.getCenter(), map1.getZoom(), { animate: false });
-      move = true;
-    }
-  });
-  map2.on('move', function() {
-    if (move) {
-      move = false;
-      map1.setView(map2.getCenter(), map2.getZoom(), { animate: false });
-      move = true;
-    }
-  });
+  if ($('#map2').length && $('#map2').is(':visible')) {
+    map2 = L.map('map2', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
+    map2.attributionControl.setPrefix('');
+    map2.setView([20, 5], 7, {animate: false});
+    var miniLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
+    });
+    var miniMap = new L.Control.MiniMap(miniLayer, {
+      position: 'topright',
+      height: 100,
+      zoomLevelOffset: -6,
+      minimized: true
+    }).addTo(map2);
+
+    delete imageryLayers['OSM'];
+    imageryLayers['Bing'].addTo(map2);
+
+    var move = true;
+    map1.on('move', function() {
+      if (move) {
+        move = false;
+        map2.setView(map1.getCenter(), map1.getZoom(), { animate: false });
+        move = true;
+      }
+    });
+    map2.on('move', function() {
+      if (move) {
+        move = false;
+        map1.setView(map2.getCenter(), map2.getZoom(), { animate: false });
+        move = true;
+      }
+    });
+  }
+
+  L.control.zoom({position: map2 ? 'topright' : 'topleft'}).addTo(map1);
+  L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2 || map1);
 
   if (readonly && features) {
     var fl = L.markerClusterGroup({
@@ -180,6 +186,27 @@ function querySpecific(ref) {
   });
 }
 
+function queryForPopup(target) {
+  if (!target.isPopupOpen())
+    target.openPopup();
+
+  $.ajax(endpoint + '/feature/' + projectId, {
+    contentType: 'application/json',
+    data: {ref: target.ref},
+    method: 'GET',
+    dataType: 'json',
+    error: function(x,e,h) { window.alert('Ajax error. Please reload the page.\n'+e+'\n'+h); },
+    success: function(data) {
+      data.feature.ref = data.ref;
+      displayPoint(data.feature, data.audit || {});
+      if (target.isPopupOpen()) {
+        target.setPopupContent($('#popup').html().replace(/id="[^"]+"/g, ''));
+      } else
+        onHidePopup();
+    }
+  });
+}
+
 function displayPoint(data, audit) {
   if (!data.ref) {
     window.alert('Received an empty feature. You must have validated all of them.');
@@ -228,22 +255,14 @@ function displayPoint(data, audit) {
     rIsOSM = !wereCoord && props['action'] != 'create';
   }
 
-  if (marker1) {
+  if (marker1)
     map1.removeLayer(marker1);
-    map2.removeLayer(marker1);
-  }
-  if (marker2) {
-    map1.removeLayer(marker2);
-    map2.removeLayer(marker2);
-  }
-  if (smarker1) {
+  if (marker2)
+      map2.removeLayer(marker2);
+  if (smarker1)
     map1.removeLayer(smarker1);
-    map2.removeLayer(smarker1);
-  }
-  if (smarker2) {
-    map1.removeLayer(smarker2);
+  if (smarker2)
     map2.removeLayer(smarker2);
-  }
 
   // Pan the map and draw a marker
   if (readonly) {
@@ -268,7 +287,8 @@ function displayPoint(data, audit) {
   if (rlatlon && (props['action'] != 'create' || movePos)) {
     var smTitle = rIsOSM ? 'OSM location' : 'External dataset location';
     smarker1 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map1);
-    smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
+    if (map2)
+      smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
     $('#tr_which').text(rIsOSM ? 'OpenStreetMap' : 'external dataset');
     $('#transparent').show();
     map1.fitBounds([latlon, rlatlon], {maxZoom: 18});
@@ -285,11 +305,14 @@ function displayPoint(data, audit) {
         shadowSize: [41, 41]
       }),
       mIcon = canMove ? iconGreen : new L.Icon.Default();
-  marker2 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map2);
+  if (map2)
+    marker2 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map2);
   if (!readonly) {
     marker1 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map1);
 
     if (canMove) {
+      $('#canmove').show();
+
       var guideLayer = L.layerGroup();
       L.marker(latlon).addTo(guideLayer);
       L.marker(rlatlon).addTo(guideLayer);
@@ -299,34 +322,37 @@ function displayPoint(data, audit) {
       marker1.snapediting = new L.Handler.MarkerSnap(map1, marker1, {snapDistance: 8});
       marker1.snapediting.addGuideLayer(guideLayer);
       marker1.snapediting.enable();
-      marker2.snapediting = new L.Handler.MarkerSnap(map2, marker2, {snapDistance: 8});
-      marker2.snapediting.addGuideLayer(guideLayer);
-      marker2.snapediting.enable();
 
-      $('#canmove').show();
-      var move = true;
-      marker1.on('move', function () {
-        if (move) {
-          move = false;
-          marker2.setLatLng(marker1.getLatLng());
-          move = true;
-        }
-      });
-      marker2.on('move', function () {
-        if (move) {
-          move = false;
-          marker1.setLatLng(marker2.getLatLng());
-          move = true;
-        }
-      });
       marker1.on('dragend', function() {
         map1.panTo(marker1.getLatLng());
         setChanged();
       });
-      marker2.on('dragend', function() {
-        map1.panTo(marker2.getLatLng());
-        setChanged();
-      });
+
+      if (marker2) {
+        marker2.snapediting = new L.Handler.MarkerSnap(map2, marker2, {snapDistance: 8});
+        marker2.snapediting.addGuideLayer(guideLayer);
+        marker2.snapediting.enable();
+
+        var move = true;
+        marker1.on('move', function () {
+          if (move) {
+            move = false;
+            marker2.setLatLng(marker1.getLatLng());
+            move = true;
+          }
+        });
+        marker2.on('move', function () {
+          if (move) {
+            move = false;
+            marker1.setLatLng(marker2.getLatLng());
+            move = true;
+          }
+        });
+        marker2.on('dragend', function() {
+          map1.panTo(marker2.getLatLng());
+          setChanged();
+        });
+      }
     } else {
       $('#canmove').hide();
     }
@@ -517,18 +543,12 @@ function hidePoint() {
   $('#fixme_box').hide();
   $('#remarks_box').hide();
   $('#title').html(defaultTitle);
-  if (marker2) {
-    map1.removeLayer(marker2);
+  if (marker2)
     map2.removeLayer(marker2);
-  }
-  if (smarker1) {
+  if (smarker1)
     map1.removeLayer(smarker1);
-    map2.removeLayer(smarker1);
-  }
-  if (smarker2) {
-    map1.removeLayer(smarker2);
+  if (smarker2)
     map2.removeLayer(smarker2);
-  }
 }
 
 function prepareAudit(data) {

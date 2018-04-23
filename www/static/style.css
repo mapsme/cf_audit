@@ -17,6 +17,10 @@ html, body {
   bottom: 0;
 }
 
+@media screen and (max-width: 600px) {
+  .leaflet-control-minimap { display: none !important; }
+}
+
 #map {
   height: 100%;
 }
