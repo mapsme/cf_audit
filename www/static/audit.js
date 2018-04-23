@@ -25,6 +25,7 @@ $(function() {
   };
   imageryLayers['OSM'].addTo(map1);
 
+  var miniMap;
   if ($('#map2').length && $('#map2').is(':visible')) {
     map2 = L.map('map2', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
     map2.attributionControl.setPrefix('');
@@ -32,7 +33,7 @@ $(function() {
     var miniLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
     });
-    var miniMap = new L.Control.MiniMap(miniLayer, {
+    miniMap = new L.Control.MiniMap(miniLayer, {
       position: 'topright',
       height: 100,
       zoomLevelOffset: -6,
@@ -59,8 +60,25 @@ $(function() {
     });
   }
 
+  if (!$('p.toproject').length) {
+    var ProjectButton = L.Control.extend({
+      onAdd: function() {
+        var container = L.DomUtil.create('div', 'leaflet-bar'),
+            button = L.DomUtil.create('a', '', container);
+        button.href = projectUrl;
+        button.innerHTML = '← to the project';
+        button.style.width = 'auto';
+        button.style.padding = '0 4px';
+        return container;
+      }
+    });
+    map1.addControl(new ProjectButton({ position: 'topleft' }));
+  }
+
   L.control.zoom({position: map2 ? 'topright' : 'topleft'}).addTo(map1);
   L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2 || map1);
+  var popups = $('#popup').length > 0;
+  var hash = L.hash ? L.hash(map1) : null;
 
   if (readonly && features) {
     var fl = L.markerClusterGroup({
@@ -86,9 +104,17 @@ $(function() {
           icon = action == 'c' ? iconGreen : (action == 'd' ? iconRed : new L.Icon.Default()),
           m = L.marker(features[i][1], {icon: icon});
       m.ref = features[i][0];
-      m.on('click', function(e) {
-        querySpecific(e.target.ref);
-      });
+      if (!popups) {
+        m.on('click', function(e) {
+          querySpecific(e.target.ref);
+        });
+      } else {
+        m.bindPopup('... downloading ...');
+        m.on('popupopen', function(e) {
+          queryForPopup(e.target);
+        });
+        m.on('popupclose', hidePoint);
+      }
       fl.addLayer(m);
     }
     map1.addLayer(fl);
@@ -104,14 +130,16 @@ $(function() {
         $('#zoom_out').show();
         $('#zoom_all').show();
       }
-      miniMap._setDisplay(false);
+      if (miniMap)
+        miniMap._setDisplay(false);
     } else {
       if (readonly) {
         hidePoint();
         $('#zoom_out').hide();
         $('#zoom_all').hide();
       }
-      miniMap._setDisplay(true);
+      if (miniMap)
+        miniMap._setDisplay(true);
     }
   });
   if (readonly) {
@@ -134,8 +162,19 @@ $(function() {
     window.addEventListener('popstate', function(e) {
       querySpecific(e.state);
     });
-    if (forceRef)
-      querySpecific(forceRef);
+    if (forceRef) {
+      if (popups) {
+        fl.eachLayer(function(layer) {
+          if (layer.ref == forceRef) {
+            fl.zoomToShowLayer(layer, function() {
+              layer.openPopup();
+            })
+          }
+        });
+      } else
+        querySpecific(forceRef);
+    } else if (hash)
+      hash.update();
   } else {
     var $rb = $('#reason_box');
     $rb.hide();
@@ -157,6 +196,7 @@ $(function() {
     $('#bad_dup').click({good: false, msg: 'Duplicate'}, submit);
     $('#bad_nosuch').click({good: false, msg: 'Not there'}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
+
     if (forceRef)
       querySpecific(forceRef);
     else
@@ -198,16 +238,16 @@ function queryForPopup(target) {
     error: function(x,e,h) { window.alert('Ajax error. Please reload the page.\n'+e+'\n'+h); },
     success: function(data) {
       data.feature.ref = data.ref;
-      displayPoint(data.feature, data.audit || {});
+      displayPoint(data.feature, data.audit || {}, true);
       if (target.isPopupOpen()) {
         target.setPopupContent($('#popup').html().replace(/id="[^"]+"/g, ''));
       } else
-        onHidePopup();
+        hidePoint();
     }
   });
 }
 
-function displayPoint(data, audit) {
+function displayPoint(data, audit, forPopup) {
   if (!data.ref) {
     window.alert('Received an empty feature. You must have validated all of them.');
     hidePoint();
@@ -269,7 +309,7 @@ function displayPoint(data, audit) {
     var $editThis = $('#editthis');
     if (map1.getZoom() <= 15)
       lastView = [map1.getCenter(), map1.getZoom()];
-    if (history.state != data.ref) {
+    if (!forPopup && history.state != data.ref) {
       history.pushState(data.ref, data.ref + ' — ' + document.title,
         browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
     }
@@ -291,10 +331,12 @@ function displayPoint(data, audit) {
       smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
     $('#tr_which').text(rIsOSM ? 'OpenStreetMap' : 'external dataset');
     $('#transparent').show();
-    map1.fitBounds([latlon, rlatlon], {maxZoom: 18});
+    if (!forPopup)
+      map1.fitBounds([latlon, rlatlon], {maxZoom: 18});
   } else {
     $('#transparent').hide();
-    map1.setView(latlon, 18);
+    if (!forPopup)
+      map1.setView(latlon, 18);
   }
   var mTitle = rIsOSM ? 'New location after moving' : 'OSM object location',
       iconGreen = new L.Icon({
@@ -444,7 +486,7 @@ function displayPoint(data, audit) {
         var i = props[key].indexOf(' -> ');
         keys.push([k, props[key].substr(0, i), props[key].substr(i+4), true]);
       } else if (key.startsWith('tags.')) {
-        if (props['action'] == 'create')
+        if (!forPopup && props['action'] == 'create')
           keys.push([k, '', props[key], true]);
         else if (!skip[k])
           keys.push([k, props[key]]);

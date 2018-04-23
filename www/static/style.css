@@ -21,15 +21,13 @@ html, body {
   .leaflet-control-minimap { display: none !important; }
 }
 
-#map {
+#map1.bigmap {
   height: 100%;
+  position: inherit;
+  left: 0;
 }
 
 #popup {
-  display: none;
-}
-
-.notagedit input {
   display: none;
 }
 
@@ -88,7 +86,7 @@ h1 {
   border-top: none;
 }
 
-.tags th, tr.lower, tr.single {
+.tags th, tr.lower, tr.notagedit {
   border-bottom: 1px solid lightgrey;
 }
 
