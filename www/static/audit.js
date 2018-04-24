@@ -159,9 +159,11 @@ $(function() {
     });
     $('#random').click(function() { queryNext(); });
     map1.fitBounds(fl.getBounds());
-    window.addEventListener('popstate', function(e) {
-      querySpecific(e.state);
-    });
+    if (!popups) {
+      window.addEventListener('popstate', function(e) {
+        querySpecific(e.state);
+      });
+    }
     if (forceRef) {
       if (popups) {
         fl.eachLayer(function(layer) {
