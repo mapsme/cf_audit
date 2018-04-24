@@ -78,12 +78,11 @@ $(function() {
   L.control.zoom({position: map2 ? 'topright' : 'topleft'}).addTo(map1);
   L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2 || map1);
   var popups = $('#popup').length > 0;
-  var hash = L.hash ? L.hash(map1) : null;
 
   if (readonly && features) {
     var fl = L.markerClusterGroup({
           showCoverageOnHover: false,
-          maxClusterRadius: function(zoom) { return zoom < 14 ? 40 : 10; }
+          maxClusterRadius: function(zoom) { return zoom < 15 ? 40 : 10; }
         }),
         iconRed = new L.Icon({
           iconUrl: imagesPath + '/marker-red.png',
@@ -118,6 +117,7 @@ $(function() {
       fl.addLayer(m);
     }
     map1.addLayer(fl);
+    map1.fitBounds(fl.getBounds());
   }
 
   defaultTitle = $('#title').html();
@@ -158,12 +158,13 @@ $(function() {
       map1.fitBounds(fl.getBounds());
     });
     $('#random').click(function() { queryNext(); });
-    map1.fitBounds(fl.getBounds());
     if (!popups) {
       window.addEventListener('popstate', function(e) {
         querySpecific(e.state);
       });
     }
+
+    var hash = L.hash ? L.hash(map1) : null;
     if (forceRef) {
       if (popups) {
         fl.eachLayer(function(layer) {
