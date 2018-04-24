@@ -39,6 +39,9 @@ $(function() {
       zoomLevelOffset: -6,
       minimized: true
     }).addTo(map2);
+    if (L.streetView) {
+      L.streetView({ position: 'topright' }).addTo(map2);
+    }
 
     delete imageryLayers['OSM'];
     imageryLayers['Bing'].addTo(map2);
@@ -301,7 +304,7 @@ function displayPoint(data, audit, forPopup) {
   if (marker1)
     map1.removeLayer(marker1);
   if (marker2)
-      map2.removeLayer(marker2);
+    map2.removeLayer(marker2);
   if (smarker1)
     map1.removeLayer(smarker1);
   if (smarker2)
