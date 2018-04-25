@@ -39,9 +39,6 @@ $(function() {
       zoomLevelOffset: -6,
       minimized: true
     }).addTo(map2);
-    if (L.streetView) {
-      L.streetView({ position: 'topright' }).addTo(map2);
-    }
 
     delete imageryLayers['OSM'];
     imageryLayers['Bing'].addTo(map2);
@@ -78,6 +75,9 @@ $(function() {
     map1.addControl(new ProjectButton({ position: 'topleft' }));
   }
 
+  if (map2 && L.streetView) {
+    L.streetView({ position: 'bottomright' }).addTo(map2);
+  }
   L.control.zoom({position: map2 ? 'topright' : 'topleft'}).addTo(map1);
   L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2 || map1);
   var popups = $('#popup').length > 0;

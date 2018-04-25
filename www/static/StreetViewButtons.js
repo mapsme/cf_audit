@@ -1,42 +1,79 @@
 L.StreetView = L.Control.extend({
   options: {
     google: true,
-    yandex: true
+    yandex: true,
+    mapillary: false,
+    mosatlas: true,
+  },
+
+  bounds: {
+    yandex: L.latLngBounds([[35.6, 18.5], [72, 180]]),
+    mosatlas: L.latLngBounds([[55.113, 36.708], [56.041, 38]])
   },
 
   onAdd: function(map) {
-    var container = L.DomUtil.create('div', 'leaflet-bar');
-    if (this.options.google)
-      container.appendChild(this._addProvider(
-        'Google', 'Google Street View',
-        'https://www.google.com/maps?layer=c&cbll={lat},{lon}'));
-    if (this.options.yandex)
-      container.appendChild(this._addProvider(
-        'Яндекс', 'Yandex Panoramas',
-        'https://yandex.ru/maps/?panorama%5Bpoint%5D={lon},{lat}'));
+    this._container = L.DomUtil.create('div', 'leaflet-bar');
+    this._buttons = [];
 
-    map.on('moveend', function() {
-      var lat = map.getCenter().lat,
-          lon = map.getCenter().lng;
-      for (var i = 0; i < container.children.length; i++) {
-        var tmpl = container.children[i].hrefTemplate;
-        tmpl = tmpl.replace('{lon}', L.Util.formatNum(lon, 6)).replace('{lat}', L.Util.formatNum(lat, 6));
-        container.children[i].href = tmpl;
-      }
-    });
-    return container;
+    this._addProvider('google', 'GSV', 'Google Street View',
+      'https://www.google.com/maps?layer=c&cbll={lat},{lon}');
+    this._addProvider('yandex', 'ЯП', 'Yandex Panoramas',
+      'https://yandex.ru/maps/?panorama%5Bpoint%5D={lon},{lat}');
+    this._addProvider('mapillary', 'Mpl', 'Mapillary Photos',
+      'https://www.mapillary.com/app/?lat={lat}&lng={lon}&z=17&focus=photo');
+    this._addProvider('mosatlas', 'Мос', 'Панорамы из Атласа Москвы',
+      'http://atlas.mos.ru/?lang=ru&z=9&ll={lon}%2C{lat}&pp={lon}%2C{lat}');
+
+    map.on('moveend', function() { this._update(map.getCenter()); }, this);
+    this._update(map.getCenter());
+    return this._container;
   },
 
-  _addProvider(letter, title, url) {
+  _addProvider: function(id, letter, title, url) {
+    if (!this.options[id])
+      return;
     var button = L.DomUtil.create('a');
+    button._bounds = this.bounds[id];
     button.innerHTML = letter;
     button.href = '#';
-    button.hrefTemplate = url;
+    button._template = url;
     button.target = 'streetview';
     button.title = title;
     button.style.padding = '0 8px';
     button.style.width = 'auto';
-    return button;
+
+    // Overriding some of the leaflet styles
+    button.style.display = 'inline-block';
+    button.style.border = 'none';
+    button.style.borderRadius = '0 0 0 0';
+    this._buttons.push(button);
+  },
+
+  _update: function(center) {
+    if (!center)
+      return;
+    var last;
+    for (var i = 0; i < this._buttons.length; i++) {
+      var b = this._buttons[i],
+          show = !b._bounds || b._bounds.contains(center),
+          vis = this._container.contains(b);
+      console.log('Update: ' + b.innerHTML + ': show=' + show + ', vis=' + vis);
+
+      if (show && !vis) {
+        ref = last ? last.nextSibling : this._container.firstChild;
+        this._container.insertBefore(b, ref);
+      } else if (!show && vis) {
+        this._container.removeChild(b);
+        return;
+      }
+      last = b;
+
+      var tmpl = b._template;
+      tmpl = tmpl
+        .replace(/{lon}/g, L.Util.formatNum(center.lng, 6))
+        .replace(/{lat}/g, L.Util.formatNum(center.lat, 6));
+      b.href = tmpl;
+    }
   }
 });
 
