@@ -420,13 +420,13 @@ def export_audit(pid):
     project = Project.get(Project.id == pid)
     if not is_admin(get_user(), project):
         return redirect(url_for('front'))
-    update_audit(project)
+    audit = update_audit(project)
     try:
         project.save()
     except OperationalError:
         pass
     return app.response_class(
-        project.audit or '{}', mimetype='application/json',
+        audit or '{}', mimetype='application/json',
         headers={'Content-Disposition': 'attachment;filename=audit_{}.json'.format(project.name)})
 
 

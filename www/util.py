@@ -83,16 +83,17 @@ def update_features(project, features, audit):
 
 
 def update_audit(project):
-    audit = json.loads(project.audit or '{}')
-    changed = False
+    old_audit = json.loads(project.audit or '{}')
     query = Feature.select(Feature.ref, Feature.audit).where(
         Feature.project == project, Feature.audit.is_null(False)).tuples()
+    audit = {}
     for feat in query:
         if feat[1]:
-            changed = True
             audit[feat[0]] = json.loads(feat[1])
-    if changed:
-        project.audit = json.dumps(audit, ensure_ascii=False)
+    data = json.dumps(audit, ensure_ascii=False)
+    if audit != old_audit:
+        project.audit = data
+    return data
 
 
 def update_features_cache(project):
