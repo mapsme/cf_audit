@@ -39,7 +39,7 @@ L.StreetView = L.Control.extend({
 
   releaseCoord: function() {
     this._fixed = false;
-    this._update(map.getCenter());
+    this._update(this._map.getCenter());
   },
 
   _addProvider: function(id, letter, title, url) {
