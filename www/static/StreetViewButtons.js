@@ -24,9 +24,22 @@ L.StreetView = L.Control.extend({
     this._addProvider('mosatlas', 'Мос', 'Панорамы из Атласа Москвы',
       'http://atlas.mos.ru/?lang=ru&z=9&ll={lon}%2C{lat}&pp={lon}%2C{lat}');
 
-    map.on('moveend', function() { this._update(map.getCenter()); }, this);
+    map.on('moveend', function() {
+      if (!this._fixed)
+        this._update(map.getCenter());
+    }, this);
     this._update(map.getCenter());
     return this._container;
+  },
+
+  fixCoord: function(latlon) {
+    this._update(latlon);
+    this._fixed = true;
+  },
+
+  releaseCoord: function() {
+    this._fixed = false;
+    this._update(map.getCenter());
   },
 
   _addProvider: function(id, letter, title, url) {
@@ -57,7 +70,6 @@ L.StreetView = L.Control.extend({
       var b = this._buttons[i],
           show = !b._bounds || b._bounds.contains(center),
           vis = this._container.contains(b);
-      console.log('Update: ' + b.innerHTML + ': show=' + show + ', vis=' + vis);
 
       if (show && !vis) {
         ref = last ? last.nextSibling : this._container.firstChild;

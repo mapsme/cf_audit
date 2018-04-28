@@ -1,4 +1,4 @@
-var map1, map2, marker1, marker2, smarker1, smarker2, feature, keys, lastView, defaultTitle;
+var map1, map2, marker1, marker2, smarker1, smarker2, feature, keys, lastView, defaultTitle, svButton;
 
 $(function() {
   map1 = L.map('map1', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false, attributionControl: false});
@@ -75,11 +75,10 @@ $(function() {
     map1.addControl(new ProjectButton({ position: 'topleft' }));
   }
 
-  if (map2 && L.streetView) {
-    L.streetView({ position: 'bottomright' }).addTo(map2);
-  }
   L.control.zoom({position: map2 ? 'topright' : 'topleft'}).addTo(map1);
   L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2 || map1);
+  if (map2 && L.streetView)
+    svButton = L.streetView({ position: 'bottomright' }).addTo(map2);
   var popups = $('#popup').length > 0;
 
   if (readonly && features) {
@@ -253,31 +252,22 @@ function queryForPopup(target) {
   });
 }
 
-function displayPoint(data, audit, forPopup) {
-  if (!data.ref) {
-    window.alert('Received an empty feature. You must have validated all of them.');
-    hidePoint();
-    return;
-  }
+function setChanged(fast) {
+  var $good = $('#good');
+  if (!fast)
+    $good.text('Record changes');
+  else
+    $good.text($.isEmptyObject(prepareAudit()) ? 'Good' : 'Record changes');
+}
 
+function updateMarkers(data, audit, panMap) {
   var movePos = audit['move'], latlon, rlatlon, rIsOSM = false,
       coord = data['geometry']['coordinates'],
       props = data['properties'],
       canMove = !readonly && (props['can_move'] || props['action'] == 'create'),
       refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
-      wereCoord = props['were_coords'],
-      remarks = props['remarks'];
+      wereCoord = props['were_coords'];
 
-  var $good = $('#good');
-  $good.text('Good');
-  function setChangedFast() {
-    $good.text('Record changes');
-  }
-  function setChanged() {
-    $good.text($.isEmptyObject(prepareAudit()) ? 'Good' : 'Record changes');
-  }
-
-  feature = data;
   if (!movePos || !refCoord || movePos == 'osm') {
     if (movePos == 'osm' && wereCoord)
       latlon = L.latLng(wereCoord[1], wereCoord[0]);
@@ -310,25 +300,6 @@ function displayPoint(data, audit, forPopup) {
   if (smarker2)
     map2.removeLayer(smarker2);
 
-  // Pan the map and draw a marker
-  if (readonly) {
-    var $editThis = $('#editthis');
-    if (map1.getZoom() <= 15)
-      lastView = [map1.getCenter(), map1.getZoom()];
-    if (!forPopup && history.state != data.ref) {
-      history.pushState(data.ref, data.ref + ' — ' + document.title,
-        browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-    }
-    if ($editThis.length) {
-      $('#editlink').attr('href', featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-      $editThis.show();
-    }
-  } else {
-    history.replaceState(data.ref, data.ref + ' — ' + document.title,
-      featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-    $('#browselink').attr('href', browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-  }
-
   $('#hint').show();
   if (rlatlon && (props['action'] != 'create' || movePos)) {
     var smTitle = rIsOSM ? 'OSM location' : 'External dataset location';
@@ -337,13 +308,17 @@ function displayPoint(data, audit, forPopup) {
       smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
     $('#tr_which').text(rIsOSM ? 'OpenStreetMap' : 'external dataset');
     $('#transparent').show();
-    if (!forPopup)
+    if (panMap)
       map1.fitBounds([latlon, rlatlon], {maxZoom: 18});
   } else {
     $('#transparent').hide();
-    if (!forPopup)
+    if (panMap)
       map1.setView(latlon, 18);
   }
+
+  if (svButton)
+    svButton.fixCoord(latlon);
+
   var mTitle = rIsOSM ? 'New location after moving' : 'OSM object location',
       iconGreen = new L.Icon({
         iconUrl: imagesPath + '/marker-green.png',
@@ -405,8 +380,37 @@ function displayPoint(data, audit, forPopup) {
       $('#canmove').hide();
     }
   }
+}
 
-  // Fill in the left panel
+function saveHistoryState(ref) {
+  if (readonly) {
+    if (history.state != ref) {
+      history.pushState(ref, ref + ' — ' + document.title,
+        browseTemplateUrl.replace('tmpl', encodeURIComponent(ref)));
+    }
+  } else {
+    history.replaceState(ref, ref + ' — ' + document.title,
+      featureTemplateUrl.replace('tmpl', encodeURIComponent(ref)));
+  }
+}
+
+function prepareSidebar(data, audit) {
+  var ref = data.ref, props = data['properties'],
+      remarks = props['remarks'];
+
+  $('#good').text('Good');
+
+  if (readonly) {
+    var $editThis = $('#editthis');
+    if (map1.getZoom() <= 15)
+      lastView = [map1.getCenter(), map1.getZoom()];
+    if ($editThis.length) {
+      $('#editlink').attr('href', featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+      $editThis.show();
+    }
+  } else {
+    $('#browselink').attr('href', browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+  }
 
   function formatObjectRef(props) {
     return ' a <a href="https://www.openstreetmap.org/' +
@@ -447,7 +451,7 @@ function displayPoint(data, audit, forPopup) {
   if (!readonly) {
     $('#fixme_box').show();
     $('#fixme').val(audit['fixme'] || '');
-    $('#fixme').on('input', setChangedFast);
+    $('#fixme').on('input', function() { setChanged(true); });
     $('#reason').val(audit['comment'] || '');
   }
 
@@ -462,6 +466,18 @@ function displayPoint(data, audit, forPopup) {
   } else {
     $('#last_action').hide();
   }
+
+  // render remarks, if any.
+  if (remarks) {
+    $('#remarks_box').show();
+    $('#remarks_content').text(remarks);
+  } else {
+    $('#remarks_box').hide();
+  }
+}
+
+function renderTagTable(data, audit, editNewTags) {
+  var props = data['properties'];
 
   // Table of tags. First record the original values for unused tags
   var original = {};
@@ -492,7 +508,7 @@ function displayPoint(data, audit, forPopup) {
         var i = props[key].indexOf(' -> ');
         keys.push([k, props[key].substr(0, i), props[key].substr(i+4), true]);
       } else if (key.startsWith('tags.')) {
-        if (!forPopup && props['action'] == 'create')
+        if (editNewTags && props['action'] == 'create')
           keys.push([k, '', props[key], true]);
         else if (!skip[k])
           keys.push([k, props[key]]);
@@ -510,14 +526,6 @@ function displayPoint(data, audit, forPopup) {
       else
         keys[i].push(keys[i][3]);
     }
-  }
-
-  // render remarks, if any. 
-  if (remarks) {
-    $('#remarks_box').show(); 
-    $('#remarks_content').text(remarks);
-  } else {
-    $('#remarks_box').hide();
   }
 
   // Render the table
@@ -584,6 +592,20 @@ function displayPoint(data, audit, forPopup) {
   });
 }
 
+function displayPoint(data, audit, forPopup) {
+  if (!data.ref) {
+    window.alert('Received an empty feature. You must have validated all of them.');
+    hidePoint();
+    return;
+  }
+  feature = data;
+  if (!forPopup)
+    saveHistoryState(data.ref);
+  updateMarkers(data, audit, !forPopup);
+  prepareSidebar(data, audit);
+  renderTagTable(data, audit, !forPopup);
+}
+
 function hidePoint() {
   $('#tags').empty();
   $('#hint').hide();
@@ -597,6 +619,8 @@ function hidePoint() {
     map1.removeLayer(smarker1);
   if (smarker2)
     map2.removeLayer(smarker2);
+  if (svButton)
+    svButton.releaseCoord();
 }
 
 function prepareAudit(data) {
