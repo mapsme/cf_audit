@@ -1,5 +1,12 @@
 var map1, map2, marker1, marker2, smarker1, smarker2, feature, keys, lastView, defaultTitle, svButton;
 
+if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(searchString, position){
+      position = position || 0;
+      return this.substr(position, searchString.length) === searchString;
+  };
+}
+
 $(function() {
   map1 = L.map('map1', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false, attributionControl: false});
   L.control.permalinkAttribution().addTo(map1);
