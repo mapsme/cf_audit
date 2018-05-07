@@ -59,7 +59,7 @@ def update_features(project, features, audit):
             feat.lat = round(coord[1] * 1e7)
             feat.action = f['properties']['action'][0]
             if feat.validates_count > 0:
-                feat.validates_count = 0
+                feat.validates_count = 0 if not feat.audit else 1
                 Task.delete().where(Task.feature == feat).execute()
             feat.save()
             updated.add(ref)
@@ -69,11 +69,16 @@ def update_features(project, features, audit):
         q.execute()
 
     for ref, f_audit in audit.items():
-        if ref in ref2feat and ref not in updated and f_audit:
-            f_audit = json.dumps(f_audit, ensure_ascii=False, sort_keys=True)
+        if ref in ref2feat and ref not in updated:
+            if not f_audit:
+                f_audit = None
+            else:
+                f_audit = json.dumps(f_audit, ensure_ascii=False, sort_keys=True)
             feat = ref2feat[ref]
             if f_audit != feat.audit:
                 feat.audit = f_audit
+                if feat.validates_count == 0 and f_audit:
+                    feat.validates_count = 1
                 feat.save()
 
     project.bbox = ','.join([str(x) for x in (minlon, minlat, maxlon, maxlat)])

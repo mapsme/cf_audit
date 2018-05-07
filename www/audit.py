@@ -573,7 +573,7 @@ def api_feature(pid):
             task_query = Task.select(Task.id).where(Task.user == user, Task.feature == Feature.id)
             query = Feature.select().where(
                 Feature.project == project, Feature.validates_count < 2).where(
-                    ~fn.EXISTS(task_query)).order_by(fn_Random())
+                    ~fn.EXISTS(task_query)).order_by(Feature.validates_count, fn_Random())
             if project.validate_modified:
                 query = query.where(Feature.action == 'm')
             if user.bboxes:
