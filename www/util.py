@@ -1,4 +1,5 @@
 from .db import Feature, Task
+from peewee import fn
 import json
 import hashlib
 
@@ -84,6 +85,9 @@ def update_features(project, features, audit):
     project.bbox = ','.join([str(x) for x in (minlon, minlat, maxlon, maxlat)])
     project.feature_count = Feature.select().where(Feature.project == project).count()
     project.features_js = None
+    if Feature.select(fn.Count(fn.Distinct(Feature.region))).where(
+            Feature.project == project).scalar() <= 1:
+        project.regional = False
     project.save()
 
 

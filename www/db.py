@@ -45,6 +45,8 @@ class Project(BaseModel):
     audit = TextField(null=True)
     validate_modified = BooleanField(default=False)
     features_js = TextField(null=True)
+    prop_sv = BooleanField(default=False)
+    regional = BooleanField(default=False)
 
 
 class Feature(BaseModel):
@@ -52,6 +54,7 @@ class Feature(BaseModel):
     ref = CharField(max_length=250, index=True)
     lat = IntegerField()  # times 1e7
     lon = IntegerField()
+    region = CharField(max_length=200, null=True, index=True)
     action = FixedCharField(max_length=1)
     feature = TextField()
     feature_md5 = FixedCharField(max_length=32)
@@ -68,7 +71,7 @@ class Task(BaseModel):
 # ------------------------------ MIGRATION ------------------------------
 
 
-LAST_VERSION = 3
+LAST_VERSION = 4
 
 
 class Version(BaseModel):
@@ -128,6 +131,16 @@ def migrate():
                                 Project.features_js),
         )
         v.version = 3
+        v.save()
+
+    if v.version == 3:
+        peewee_migrate(
+            migrator.add_column(Project._meta.db_table, Project.regional.db_column,
+                                Project.regional),
+            migrator.add_column(Project._meta.db_table, Project.prop_sv.db_column, Project.prop_sv),
+            migrator.add_column(Feature._meta.db_table, Feature.region.db_column, Feature.region),
+        )
+        v.version = 4
         v.save()
 
     logging.info('Migrated the database to version %s', v.version)

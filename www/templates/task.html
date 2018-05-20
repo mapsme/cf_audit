@@ -19,6 +19,7 @@
       imagesPath = '{{ url_for('static', filename='images') }}';
       featureTemplateUrl = '{{ url_for('tasks', name=project.name, ref='tmpl') }}';
       browseTemplateUrl = '{{ url_for('browse', name=project.name, ref='tmpl') }}';
+      proprietarySV = {{ project.prop_sv | tojson }};
       readonly = false;
     </script>
     <script src="{{ dated_url_for('static', filename='audit.js') }}"></script>

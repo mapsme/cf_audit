@@ -84,8 +84,14 @@ $(function() {
 
   L.control.zoom({position: map2 ? 'topright' : 'topleft'}).addTo(map1);
   L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2 || map1);
-  if (map2 && L.streetView)
-    svButton = L.streetView({ position: 'bottomright' }).addTo(map2);
+  if (map2 && L.streetView) {
+    svOptions = { position: 'bottomright' };
+    if (!proprietarySV) {
+      svOptions.google = false;
+      svOptions.yandex = false;
+    }
+    svButton = L.streetView(svOptions).addTo(map2);
+  }
   var popups = $('#popup').length > 0;
 
   if (readonly && features) {

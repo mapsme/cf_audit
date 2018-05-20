@@ -338,6 +338,7 @@ def upload_project():
         project.feature_count = 0
         project.bbox = ''
         project.owner = user
+        project.regional = True
     project.name = request.form['name'].strip()
     if not project.name:
         return add_flash(pid, 'Empty name - bad')
@@ -351,6 +352,8 @@ def upload_project():
     project.can_validate = request.form.get('validate') is not None
     project.validate_modified = request.form.get('validate_modified') is not None
     project.hidden = request.form.get('is_hidden') is not None
+    project.regional = request.form.get('regional') is not None
+    project.prop_sv = request.form.get('prop_sv') is not None
 
     if 'json' not in request.files or request.files['json'].filename == '':
         if not pid:

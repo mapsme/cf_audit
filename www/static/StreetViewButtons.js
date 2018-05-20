@@ -1,28 +1,35 @@
 L.StreetView = L.Control.extend({
   options: {
     google: true,
+    bing: true,
     yandex: true,
-    mapillary: false,
-    mosatlas: true,
+    mapillary: true,
+    mapillaryId: null,
+    mosatlas: true
   },
 
-  bounds: {
-    yandex: L.latLngBounds([[35.6, 18.5], [72, 180]]),
-    mosatlas: L.latLngBounds([[55.113, 36.708], [56.041, 38]])
-  },
+  providers: [
+    ['google', 'GSV', 'Google Street View', false,
+      'https://www.google.com/maps?layer=c&cbll={lat},{lon}'],
+    ['bing', 'Bing', 'Bing StreetSide',
+      L.latLngBounds([[25, -168], [71.4, 8.8]]),
+      'https://www.bing.com/maps?cp={lat}~{lon}&lvl=19&style=x&v=2'],
+    ['yandex', 'ЯП', 'Yandex Panoramas',
+      L.latLngBounds([[35.6, 18.5], [72, 180]]),
+      'https://yandex.ru/maps/?panorama%5Bpoint%5D={lon},{lat}'],
+    ['mapillary', 'Mplr', 'Mapillary Photos', false,
+      'https://a.mapillary.com/v3/images?client_id={id}&closeto={lon},{lat}&lookat={lon},{lat}'],
+    ['mosatlas', 'Мос', 'Панорамы из Атласа Москвы',
+      L.latLngBounds([[55.113, 36.708], [56.041, 38]]),
+      'http://atlas.mos.ru/?lang=ru&z=9&ll={lon}%2C{lat}&pp={lon}%2C{lat}'],
+  ],
 
   onAdd: function(map) {
     this._container = L.DomUtil.create('div', 'leaflet-bar');
     this._buttons = [];
 
-    this._addProvider('google', 'GSV', 'Google Street View',
-      'https://www.google.com/maps?layer=c&cbll={lat},{lon}');
-    this._addProvider('yandex', 'ЯП', 'Yandex Panoramas',
-      'https://yandex.ru/maps/?panorama%5Bpoint%5D={lon},{lat}');
-    this._addProvider('mapillary', 'Mpl', 'Mapillary Photos',
-      'https://www.mapillary.com/app/?lat={lat}&lng={lon}&z=17&focus=photo');
-    this._addProvider('mosatlas', 'Мос', 'Панорамы из Атласа Москвы',
-      'http://atlas.mos.ru/?lang=ru&z=9&ll={lon}%2C{lat}&pp={lon}%2C{lat}');
+    for (var i = 0; i < this.providers.length; i++)
+      this._addProvider(this.providers[i]);
 
     map.on('moveend', function() {
       if (!this._fixed)
@@ -42,18 +49,41 @@ L.StreetView = L.Control.extend({
     this._update(this._map.getCenter());
   },
 
-  _addProvider: function(id, letter, title, url) {
-    if (!this.options[id])
+  _addProvider: function(provider) {
+    if (!this.options[provider[0]])
+      return;
+    if (provider[0] == 'mapillary' && !this.options.mapillaryId)
       return;
     var button = L.DomUtil.create('a');
-    button._bounds = this.bounds[id];
-    button.innerHTML = letter;
+    button.innerHTML = provider[1];
+    button.title = provider[2];
+    button._bounds = provider[3];
+    button._template = provider[4];
     button.href = '#';
-    button._template = url;
     button.target = 'streetview';
-    button.title = title;
     button.style.padding = '0 8px';
     button.style.width = 'auto';
+
+    // Some buttons require complex logic
+    if (provider[0] == 'mapillary') {
+      button._needUrl = false;
+      L.DomEvent.on(button, 'click', function(e) {
+        if (button._href) {
+          this._ajaxRequest(
+            button._href.replace(/{id}/, this.options.mapillaryId),
+            function(data) {
+              if (data && data.features && data.features[0].properties) {
+                var photoKey = data.features[0].properties.key,
+                    url = 'https://www.mapillary.com/map/im/{key}'.replace(/{key}/, photoKey);
+                window.open(url, button.target);
+              }
+            }
+          );
+        }
+        return L.DomEvent.preventDefault(e);
+      }, this);
+    } else
+      button._needUrl = true;
 
     // Overriding some of the leaflet styles
     button.style.display = 'inline-block';
@@ -84,8 +114,25 @@ L.StreetView = L.Control.extend({
       tmpl = tmpl
         .replace(/{lon}/g, L.Util.formatNum(center.lng, 6))
         .replace(/{lat}/g, L.Util.formatNum(center.lat, 6));
-      b.href = tmpl;
+      if (b._needUrl)
+        b.href = tmpl;
+      else
+        b._href = tmpl;
     }
+  },
+
+  _ajaxRequest: function(url, callback) {
+    if (window.XMLHttpRequest === undefined)
+      return;
+    var req = new XMLHttpRequest();
+    req.open("GET", url);
+    req.onreadystatechange = function() {
+      if (req.readyState === 4 && req.status == 200) {
+        var data = (JSON.parse(req.responseText));
+        callback(data);
+      }
+    };
+    req.send();
   }
 });
 
