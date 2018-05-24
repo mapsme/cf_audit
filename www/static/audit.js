@@ -8,7 +8,7 @@ if (!String.prototype.startsWith) {
 }
 
 $(function() {
-  map1 = L.map('map1', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false, attributionControl: false});
+  map1 = L.map('map1', {minZoom: AP.readonly ? 4 : 15, maxZoom: 19, zoomControl: false, attributionControl: false});
   L.control.permalinkAttribution().addTo(map1);
   map1.attributionControl.setPrefix('');
   map1.setView([20, 5], 7, {animate: false});
@@ -34,7 +34,7 @@ $(function() {
 
   var miniMap;
   if ($('#map2').length && $('#map2').is(':visible')) {
-    map2 = L.map('map2', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
+    map2 = L.map('map2', {minZoom: AP.readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
     map2.attributionControl.setPrefix('');
     map2.setView([20, 5], 7, {animate: false});
     var miniLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -72,7 +72,7 @@ $(function() {
       onAdd: function() {
         var container = L.DomUtil.create('div', 'leaflet-bar'),
             button = L.DomUtil.create('a', '', container);
-        button.href = projectUrl;
+        button.href = AP.projectUrl;
         button.innerHTML = '← to the project';
         button.style.width = 'auto';
         button.style.padding = '0 4px';
@@ -86,29 +86,29 @@ $(function() {
   L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2 || map1);
   if (map2 && L.streetView) {
     svOptions = { position: 'bottomright' };
-    if (!proprietarySV) {
+    if (!AP.proprietarySV)
       svOptions.google = false;
-      svOptions.yandex = false;
-    }
+    if (AP.mapillaryId)
+      svOptions.mapillaryId = AP.mapillaryId;
     svButton = L.streetView(svOptions).addTo(map2);
   }
   var popups = $('#popup').length > 0;
 
-  if (readonly && features) {
+  if (AP.readonly && features) {
     var fl = L.markerClusterGroup({
           showCoverageOnHover: false,
           maxClusterRadius: function(zoom) { return zoom < 15 ? 40 : 10; }
         }),
         iconRed = new L.Icon({
-          iconUrl: imagesPath + '/marker-red.png',
-          shadowUrl: imagesPath + '/marker-shadow.png',
+          iconUrl: AP.imagesPath + '/marker-red.png',
+          shadowUrl: AP.imagesPath + '/marker-shadow.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           shadowSize: [41, 41]
         }),
         iconGreen = new L.Icon({
-          iconUrl: imagesPath + '/marker-green.png',
-          shadowUrl: imagesPath + '/marker-shadow.png',
+          iconUrl: AP.imagesPath + '/marker-green.png',
+          shadowUrl: AP.imagesPath + '/marker-shadow.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           shadowSize: [41, 41]
@@ -141,14 +141,14 @@ $(function() {
   $('#remarks_box').hide();
   map1.on('zoomend', function() {
     if (map1.getZoom() >= 10) {
-      if (readonly) {
+      if (AP.readonly) {
         $('#zoom_out').show();
         $('#zoom_all').show();
       }
       if (miniMap)
         miniMap._setDisplay(false);
     } else {
-      if (readonly) {
+      if (AP.readonly) {
         hidePoint();
         $('#zoom_out').hide();
         $('#zoom_all').hide();
@@ -157,7 +157,7 @@ $(function() {
         miniMap._setDisplay(true);
     }
   });
-  if (readonly) {
+  if (AP.readonly) {
     if ($('#editthis').length)
       $('#editthis').hide();
     $('#zoom_out').click(function() {
@@ -180,17 +180,17 @@ $(function() {
     }
 
     var hash = L.hash ? L.hash(map1) : null;
-    if (forceRef) {
+    if (AP.forceRef) {
       if (popups) {
         fl.eachLayer(function(layer) {
-          if (layer.ref == forceRef) {
+          if (layer.ref == AP.forceRef) {
             fl.zoomToShowLayer(layer, function() {
               layer.openPopup();
             })
           }
         });
       } else
-        querySpecific(forceRef);
+        querySpecific(AP.forceRef);
     } else if (hash)
       hash.update();
   } else {
@@ -215,17 +215,17 @@ $(function() {
     $('#bad_nosuch').click({good: false, msg: 'Not there'}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
 
-    if (forceRef)
-      querySpecific(forceRef);
+    if (AP.forceRef)
+      querySpecific(AP.forceRef);
     else
       queryNext();
   }
 });
 
 function queryNext(audit) {
-  $.ajax(endpoint + '/feature/' + projectId, {
+  $.ajax(AP.endpoint + '/feature/' + AP.projectId, {
     contentType: 'application/json',
-    data: audit == null ? (readonly ? {browse: 1} : null) : JSON.stringify(audit),
+    data: audit == null ? (AP.readonly ? {browse: 1} : null) : JSON.stringify(audit),
     method: audit ? 'POST' : 'GET',
     dataType: 'json',
     error: function(x,e,h) { window.alert('Ajax error. Please reload the page.\n'+e+'\n'+h); hidePoint(); },
@@ -234,7 +234,7 @@ function queryNext(audit) {
 }
 
 function querySpecific(ref) {
-  $.ajax(endpoint + '/feature/' + projectId, {
+  $.ajax(AP.endpoint + '/feature/' + AP.projectId, {
     contentType: 'application/json',
     data: {ref: ref},
     method: 'GET',
@@ -248,7 +248,7 @@ function queryForPopup(target) {
   if (!target.isPopupOpen())
     target.openPopup();
 
-  $.ajax(endpoint + '/feature/' + projectId, {
+  $.ajax(AP.endpoint + '/feature/' + AP.projectId, {
     contentType: 'application/json',
     data: {ref: target.ref},
     method: 'GET',
@@ -277,7 +277,7 @@ function updateMarkers(data, audit, panMap) {
   var movePos = audit['move'], latlon, rlatlon, rIsOSM = false,
       coord = data['geometry']['coordinates'],
       props = data['properties'],
-      canMove = !readonly && (props['can_move'] || props['action'] == 'create'),
+      canMove = !AP.readonly && (props['can_move'] || props['action'] == 'create'),
       refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
       wereCoord = props['were_coords'];
 
@@ -334,8 +334,8 @@ function updateMarkers(data, audit, panMap) {
 
   var mTitle = rIsOSM ? 'New location after moving' : 'OSM object location',
       iconGreen = new L.Icon({
-        iconUrl: imagesPath + '/marker-green.png',
-        shadowUrl: imagesPath + '/marker-shadow.png',
+        iconUrl: AP.imagesPath + '/marker-green.png',
+        shadowUrl: AP.imagesPath + '/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         shadowSize: [41, 41]
@@ -343,7 +343,7 @@ function updateMarkers(data, audit, panMap) {
       mIcon = canMove ? iconGreen : new L.Icon.Default();
   if (map2)
     marker2 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map2);
-  if (!readonly) {
+  if (!AP.readonly) {
     marker1 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map1);
 
     if (canMove) {
@@ -396,14 +396,14 @@ function updateMarkers(data, audit, panMap) {
 }
 
 function saveHistoryState(ref) {
-  if (readonly) {
+  if (AP.readonly) {
     if (history.state != ref) {
       history.pushState(ref, ref + ' — ' + document.title,
-        browseTemplateUrl.replace('tmpl', encodeURIComponent(ref)));
+        AP.browseTemplateUrl.replace('tmpl', encodeURIComponent(ref)));
     }
   } else {
     history.replaceState(ref, ref + ' — ' + document.title,
-      featureTemplateUrl.replace('tmpl', encodeURIComponent(ref)));
+      AP.featureTemplateUrl.replace('tmpl', encodeURIComponent(ref)));
   }
 }
 
@@ -413,16 +413,16 @@ function prepareSidebar(data, audit) {
 
   $('#good').text('Good');
 
-  if (readonly) {
+  if (AP.readonly) {
     var $editThis = $('#editthis');
     if (map1.getZoom() <= 15)
       lastView = [map1.getCenter(), map1.getZoom()];
     if ($editThis.length) {
-      $('#editlink').attr('href', featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+      $('#editlink').attr('href', AP.featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
       $editThis.show();
     }
   } else {
-    $('#browselink').attr('href', browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+    $('#browselink').attr('href', AP.browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
   }
 
   function formatObjectRef(props) {
@@ -445,7 +445,7 @@ function prepareSidebar(data, audit) {
   $('#title').html(title);
 
   $('#buttons button').each(function() { $(this).prop('disabled', false); });
-  if (readonly) {
+  if (AP.readonly) {
     // TODO: show or hide "zoom" buttons depending on selected feature
   } else if (props['action'] == 'create') {
     $('#bad').hide();
@@ -461,7 +461,7 @@ function prepareSidebar(data, audit) {
     $('#good').focus();
   }
 
-  if (!readonly) {
+  if (!AP.readonly) {
     $('#fixme_box').show();
     $('#fixme').val(audit['fixme'] || '');
     $('#fixme').on('input', function() { setChanged(true); });
@@ -504,7 +504,7 @@ function renderTagTable(data, audit, editNewTags) {
   for (var key in props) {
     if (key.startsWith('tags') || key.startsWith('ref_unused_tags')) {
       k = key.substr(key.indexOf('.')+1);
-      if (!readonly && (k == 'source' || k.startsWith('ref') || k == 'fixme') && !key.startsWith('ref_unused')) {
+      if (!AP.readonly && (k == 'source' || k.startsWith('ref') || k == 'fixme') && !key.startsWith('ref_unused')) {
         if (k == 'fixme')
           $('#fixme').val(props[key]);
         keys.push([k, props[key]]);
@@ -590,7 +590,7 @@ function renderTagTable(data, audit, editNewTags) {
       $radio.prop('checked', true);
       $(this).addClass(cellColor(row, which));
     }
-    if (readonly)
+    if (AP.readonly)
       $radio.hide();
     else {
       $(this).click(function() {

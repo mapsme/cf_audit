@@ -13,6 +13,7 @@ ADMINS = set([290271])  # Zverik
 OAUTH_KEY = ''
 OAUTH_SECRET = ''
 SECRET_KEY = 'sdkjfhsfljhsadf'
+MAPILLARY_CLIENT_ID = ''
 
 try:
     from config_local import *

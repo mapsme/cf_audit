@@ -14,14 +14,17 @@
     <script src="{{ url_for('static', filename='PermalinkAttribution.js') }}"></script>
     <script src="{{ dated_url_for('static', filename='StreetViewButtons.js') }}"></script>
     <script>
-      endpoint = '{{ url_for('api') }}';
-      projectId = {{ project.id }};
-      forceRef = {% if ref %}'{{ ref }}'{% else %}null{% endif %};
-      imagesPath = '{{ url_for('static', filename='images') }}';
-      featureTemplateUrl = '{{ url_for('tasks', name=project.name, ref='tmpl') }}';
-      browseTemplateUrl = '{{ url_for('browse', name=project.name, ref='tmpl') }}';
-      proprietarySV = {{ project.prop_sv | tojson }};
-      readonly = true;
+      AP = {
+        endpoint: '{{ url_for('api') }}',
+        projectId: {{ project.id }},
+        forceRef: {% if ref %}'{{ ref }}'{% else %}null{% endif %},
+        imagesPath: '{{ url_for('static', filename='images') }}',
+        featureTemplateUrl: '{{ url_for('tasks', name=project.name, ref='tmpl') }}',
+        browseTemplateUrl: '{{ url_for('browse', name=project.name, ref='tmpl') }}',
+        proprietarySV: {{ project.prop_sv | tojson }},
+        mapillaryId: '{{ mapillary_id }}',
+        readonly: true
+      };
     </script>
     <script src="{{ url_for('all_features', pid=project.id) }}"></script>
     <script src="{{ dated_url_for('static', filename='audit.js') }}"></script>

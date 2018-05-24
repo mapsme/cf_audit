@@ -169,7 +169,8 @@ def project(name):
 @app.route('/browse/<name>/<ref>')
 def browse(name, ref=None):
     project = Project.get(Project.name == name)
-    return render_template('browse.html', project=project, ref=ref)
+    return render_template('browse.html', project=project, ref=ref,
+                           mapillary_id=config.MAPILLARY_CLIENT_ID)
 
 
 @app.route('/map/<name>')
@@ -191,7 +192,8 @@ def tasks(name, ref=None):
         else:
             flash('Project validation is disabled')
             return redirect(url_for('project', name=name))
-    return render_template('task.html', project=project, ref=ref)
+    return render_template('task.html', project=project, ref=ref,
+                           mapillary_id=config.MAPILLARY_CLIENT_ID)
 
 
 # Lifted from http://flask.pocoo.org/snippets/44/
