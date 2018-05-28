@@ -136,23 +136,43 @@ def logout():
 
 
 @app.route('/project/<name>')
-def project(name):
+@app.route('/project/<name>/<region>')
+def project(name, region=None):
     project = Project.get(Project.name == name)
     desc = project.description.replace('\n', '<br>')
-    cnt = project.feature_count
+    cnt = Feature.select(Feature.id).where(Feature.project == project)
     val1 = Feature.select(Feature.id).where(Feature.project == project,
                                             Feature.validates_count > 0)
     val2 = Feature.select(Feature.id).where(Feature.project == project,
                                             Feature.validates_count >= 2)
+    corrected = Feature.select(Feature.id).where(
+        Feature.project == project, Feature.audit.is_null(False), Feature.audit != '')
+    skipped = Feature.select(Feature.id).where(
+        Feature.project == project, Feature.audit.contains('"skip": true'))
+
+    if region is not None:
+        val1 = val1.where(Feature.region == region)
+        val2 = val2.where(Feature.region == region)
+        cnt = cnt.where(Feature.region == region)
+        corrected = corrected.where(Feature.region == region)
+        skipped = skipped.where(Feature.region == region)
     if project.validate_modified:
         val1 = val1.where(Feature.action == 'm')
         val2 = val2.where(Feature.action == 'm')
-        cnt = Feature.select(Feature.id).where(Feature.project == project,
-                                               Feature.action == 'm').count()
-    corrected = Feature.select(Feature.id).where(
-        Feature.project == project, Feature.audit.is_null(False), Feature.audit != '').count()
-    skipped = Feature.select(Feature.id).where(
-        Feature.project == project, Feature.audit.contains('"skip": true')).count()
+        cnt = cnt.where(Feature.action == 'm')
+
+    regions = []
+    if project.regional:
+        regions = Feature.select(
+            Feature.region, fn.Count(),
+            fn.Sum(fn.Min(Feature.validates_count, 1))).where(
+                Feature.project == project).group_by(
+                Feature.region).order_by(Feature.region).tuples()
+        if len(regions) == 1:
+            regions = []
+        else:
+            regions = [(None, cnt.count(), val1.count())] + list(regions)
+
     user = get_user()
     if user:
         has_skipped = Task.select().join(Feature).where(
@@ -160,29 +180,32 @@ def project(name):
     else:
         has_skipped = False
     return render_template('project.html', project=project, admin=is_admin(user, project),
-                           count=cnt, desc=desc, val1=val1.count(), val2=val2.count(),
-                           corrected=corrected, skipped=skipped,
-                           has_skipped=has_skipped)
+                           count=cnt.count(), desc=desc, val1=val1.count(), val2=val2.count(),
+                           corrected=corrected.count(), skipped=skipped.count(),
+                           has_skipped=has_skipped, region=region, regions=regions)
 
 
 @app.route('/browse/<name>')
 @app.route('/browse/<name>/<ref>')
-def browse(name, ref=None):
+@app.route('/browse/<name>/<ref>/<region>')
+def browse(name, ref=None, region=None):
     project = Project.get(Project.name == name)
-    return render_template('browse.html', project=project, ref=ref,
+    return render_template('browse.html', project=project, ref=ref, region=region,
                            mapillary_id=config.MAPILLARY_CLIENT_ID)
 
 
 @app.route('/map/<name>')
 @app.route('/map/<name>/<ref>')
-def show_map(name, ref=None):
+@app.route('/map/<name>/<ref>/<region>')
+def show_map(name, ref=None, region=None):
     project = Project.get(Project.name == name)
-    return render_template('map.html', project=project, ref=ref)
+    return render_template('map.html', project=project, ref=ref, region=region)
 
 
 @app.route('/run/<name>')
 @app.route('/run/<name>/<ref>')
-def tasks(name, ref=None):
+@app.route('/run/<name>/<ref>/<region>')
+def tasks(name, ref=None, region=None):
     if not get_user():
         return redirect(url_for('login', next=request.path))
     project = Project.get(Project.name == name)
@@ -192,7 +215,7 @@ def tasks(name, ref=None):
         else:
             flash('Project validation is disabled')
             return redirect(url_for('project', name=name))
-    return render_template('task.html', project=project, ref=ref,
+    return render_template('task.html', project=project, ref=ref, region=region,
                            mapillary_id=config.MAPILLARY_CLIENT_ID)
 
 
@@ -514,14 +537,24 @@ def api():
 @app.route('/api/features/<int:pid>.js')
 def all_features(pid):
     project = Project.get(Project.id == pid)
-    if not project.features_js:
-        update_features_cache(project)
-        try:
-            project.save()
-        except OperationalError:
-            # Sometimes wait is too long and MySQL disappears
-            pass
-    return app.response_class('features = {}'.format(project.features_js),
+    region = request.args.get('region')
+    if region:
+        query = Feature.select(Feature.ref, Feature.lat, Feature.lon, Feature.action).where(
+                Feature.project == project, Feature.region == region).tuples()
+        features = []
+        for ref, lat, lon, action in query:
+            features.append([ref, [lat/1e7, lon/1e7], action])
+        features_js = json.dumps(features, ensure_ascii=False)
+    else:
+        if not project.features_js:
+            update_features_cache(project)
+            try:
+                project.save()
+            except OperationalError:
+                # Sometimes wait is too long and MySQL disappears
+                pass
+        features_js = project.features_js
+    return app.response_class('features = {}'.format(features_js),
                               mimetype='application/javascript')
 
 
@@ -567,11 +600,15 @@ def api_feature(pid):
                 elif not user_did_it:
                     feat.validates_count += 1
                 feat.save()
+    region = request.args.get('region')
     fref = request.args.get('ref')
     if fref:
         feature = Feature.get(Feature.project == project, Feature.ref == fref)
     elif not user or request.args.get('browse') == '1':
-        feature = Feature.select().where(Feature.project == project).order_by(fn_Random()).get()
+        query = Feature.select().where(Feature.project == project)
+        if region:
+            query = query.where(Feature.region == region)
+        feature = query.order_by(fn_Random()).get()
     else:
         try:
             # Maybe use a join: https://stackoverflow.com/a/35927141/1297601
@@ -581,6 +618,8 @@ def api_feature(pid):
                     ~fn.EXISTS(task_query)).order_by(Feature.validates_count, fn_Random())
             if project.validate_modified:
                 query = query.where(Feature.action == 'm')
+            if region:
+                query = query.where(Feature.region == region)
             if user.bboxes:
                 bboxes = BBoxes(user)
                 feature = None

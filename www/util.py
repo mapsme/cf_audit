@@ -41,6 +41,7 @@ def update_features(project, features, audit):
             feat = ref2feat[ref]
             if feat.feature_md5 != md5_hex:
                 update = True
+            update = True
         else:
             feat = Feature(project=project, ref=ref)
             feat.validates_count = 0
@@ -59,6 +60,7 @@ def update_features(project, features, audit):
             feat.lon = round(coord[0] * 1e7)
             feat.lat = round(coord[1] * 1e7)
             feat.action = f['properties']['action'][0]
+            feat.region = f['properties'].get('region')
             if feat.validates_count > 0:
                 feat.validates_count = 0 if not feat.audit else 1
                 Task.delete().where(Task.feature == feat).execute()
@@ -92,7 +94,6 @@ def update_features(project, features, audit):
 
 
 def update_audit(project):
-    old_audit = json.loads(project.audit or '{}')
     query = Feature.select(Feature.ref, Feature.audit).where(
         Feature.project == project, Feature.audit.is_null(False)).tuples()
     audit = {}
@@ -100,8 +101,7 @@ def update_audit(project):
         if feat[1]:
             audit[feat[0]] = json.loads(feat[1])
     data = json.dumps(audit, ensure_ascii=False)
-    if audit != old_audit:
-        project.audit = data
+    project.audit = data
     return data
 
 
@@ -111,4 +111,6 @@ def update_features_cache(project):
     features = []
     for ref, lat, lon, action in query:
         features.append([ref, [lat/1e7, lon/1e7], action])
-    project.features_js = json.dumps(features, ensure_ascii=False).encode('utf-8')
+    data = json.dumps(features, ensure_ascii=False)
+    project.features_js = data
+    return data
