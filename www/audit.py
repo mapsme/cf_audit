@@ -136,6 +136,7 @@ def logout():
 
 
 @app.route('/project/<name>')
+@app.route('/project/<name>/')
 @app.route('/project/<name>/<region>')
 def project(name, region=None):
     project = Project.get(Project.name == name)
@@ -187,28 +188,28 @@ def project(name, region=None):
 
 @app.route('/browse/<name>')
 @app.route('/browse/<name>/<ref>')
-@app.route('/browse/<name>/<ref>/<region>')
 def browse(name, ref=None, region=None):
     project = Project.get(Project.name == name)
+    region = request.args.get('region')
     return render_template('browse.html', project=project, ref=ref, region=region,
                            mapillary_id=config.MAPILLARY_CLIENT_ID)
 
 
 @app.route('/map/<name>')
 @app.route('/map/<name>/<ref>')
-@app.route('/map/<name>/<ref>/<region>')
 def show_map(name, ref=None, region=None):
     project = Project.get(Project.name == name)
+    region = request.args.get('region')
     return render_template('map.html', project=project, ref=ref, region=region)
 
 
 @app.route('/run/<name>')
 @app.route('/run/<name>/<ref>')
-@app.route('/run/<name>/<ref>/<region>')
 def tasks(name, ref=None, region=None):
     if not get_user():
         return redirect(url_for('login', next=request.path))
     project = Project.get(Project.name == name)
+    region = request.args.get('region')
     if not project.can_validate:
         if ref:
             return redirect(url_for('browse', name=name, ref=ref))
@@ -264,11 +265,14 @@ app.jinja_env.globals['url_for_other_page'] = url_for_other_page
 def table(name, page):
     PER_PAGE = 200
     project = Project.get(Project.name == name)
+    region = request.args.get('region')
     query = Feature.select().where(Feature.project == project).order_by(
         Feature.id).paginate(page, PER_PAGE)
     show_validated = request.args.get('all') == '1'
     if not show_validated:
         query = query.where(Feature.validates_count < 2)
+    if region:
+        query = query.where(Feature.region == region)
     pagination = Pagination(page, PER_PAGE, query.count(True))
     columns = set()
     features = []

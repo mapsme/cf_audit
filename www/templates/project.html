@@ -52,11 +52,18 @@
 <p><a href="{{ url_for('clear_skipped', pid=project.id) }}">Put skipped items back</a> on your review list</p>
 {% endif %}
 {% if regions %}
-<select onchange="">
+Filter by region:
+<select onchange="javascript:switchRegion(this)" tmpl="{{ url_for('project', name=project.name, region='REG') }}">
   {% for r in regions %}
   <option value="{{ r[0] or '' }}"{% if (r[0] or None) == region %} selected{% endif %}>{{ r[0] or 'All' }} ({{ r[2] }} / {{ r[1] }})</option>
   {% endfor %}
 </select>
 {% endif %}
 <p><a href="{{ url_for('front') }}">Return</a></p>
+<script language="javascript">
+function switchRegion(target) {
+  var region = target.value;
+  window.location = target.getAttribute('tmpl').replace(/REG/, region);
+}
+</script>
 {% endblock %}

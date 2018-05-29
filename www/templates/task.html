@@ -22,6 +22,7 @@
         browseTemplateUrl: '{{ url_for('browse', name=project.name, ref='tmpl') }}',
         proprietarySV: {{ project.prop_sv | tojson }},
         mapillaryId: '{{ mapillary_id }}',
+        region: '{{ region }}',
         readonly: false
       };
     </script>

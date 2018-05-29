@@ -15,15 +15,16 @@
       AP = {
         endpoint: '{{ url_for('api') }}',
         projectId: {{ project.id }},
-        projectUrl: '{{ url_for('project', name=project.name) }}',
+        projectUrl: '{{ url_for('project', name=project.name, region=region) }}',
         forceRef: {% if ref %}'{{ ref }}'{% else %}null{% endif %},
         imagesPath: '{{ url_for('static', filename='images') }}',
-        featureTemplateUrl: '{{ url_for('tasks', name=project.name, ref='tmpl') }}',
-        browseTemplateUrl: '{{ url_for('browse', name=project.name, ref='tmpl') }}',
+        featureTemplateUrl: '{{ url_for('tasks', name=project.name, ref='tmpl', region=region) }}',
+        browseTemplateUrl: '{{ url_for('browse', name=project.name, ref='tmpl', region=region) }}',
+        region: '{{ region }}',
         readonly: true
       };
     </script>
-    <script src="{{ url_for('all_features', pid=project.id) }}"></script>
+    <script src="{{ url_for('all_features', pid=project.id, region=region) }}"></script>
     <script src="{{ dated_url_for('static', filename='audit.js') }}"></script>
 {% endblock %}
 {% block content %}
