@@ -21,8 +21,3 @@ try:
     from config_local import *
 except ImportError:
     pass
-
-assert OAUTH_KEY
-assert OAUTH_SECRET
-assert SECRET_KEY
-assert ADMINS

@@ -22,6 +22,7 @@ on your server as well) using the provided docker-compose file.
     OAUTH_KEY=<your-key>
     OAUTH_SECRET=<your-secret>
     SECRET_KEY=<secret-key-do-not-share>
+    MAPILLARY_CLIENT_ID=<mapillary-key-if-any>
     ```
 
 1. Then start it on your machine using docker-compose: `docker-compose up --build`.
