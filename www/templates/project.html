@@ -26,12 +26,13 @@
 {% endblock %}
 {% block content %}
 <h1>{{ project.title }}</h1>
-<p class="description">{{ desc | safe }}</p>
-{% if project.url %}<p><a href="{{ project.url }}">Additinal info</a></p>{% endif %}
-<p><a href="{{ url_for('browse', name=project.name) }}">Browse points</a>
-(<a href="{{ url_for('table', name=project.name) }}">as a table</a>)</p>
+<div class="description">{{ desc | safe }}</div>
+{% if project.url %}<p><a href="{{ project.url }}">Additional info →</a></p>{% endif %}
+<p><a href="{{ url_for('browse', name=project.name, region=region) }}">Browse points</a>
+(<a href="{{ url_for('show_map', name=project.name, region=region) }}">on a map</a>,
+<a href="{{ url_for('table', name=project.name, region=region) }}">as a table</a>)</p>
 {% if project.can_validate %}
-<p><a href="{{ url_for('tasks', name=project.name) }}">Validate the import</a></p>
+<p><a href="{{ url_for('tasks', name=project.name, region=region) }}">Validate the import</a></p>
 {% endif %}
 {% if admin %}
 <p><a href="{{ url_for('add_project', pid=project.id) }}">Edit</a>,
@@ -50,5 +51,19 @@
 {% if has_skipped %}
 <p><a href="{{ url_for('clear_skipped', pid=project.id) }}">Put skipped items back</a> on your review list</p>
 {% endif %}
+{% if regions %}
+Filter by region:
+<select onchange="javascript:switchRegion(this)" tmpl="{{ url_for('project', name=project.name, region='REG') }}">
+  {% for r in regions %}
+  <option value="{{ r[0] or '' }}"{% if (r[0] or None) == region %} selected{% endif %}>{{ r[0] or 'All' }} ({{ r[2] }} / {{ r[1] }})</option>
+  {% endfor %}
+</select>
+{% endif %}
 <p><a href="{{ url_for('front') }}">Return</a></p>
+<script language="javascript">
+function switchRegion(target) {
+  var region = target.value;
+  window.location = target.getAttribute('tmpl').replace(/REG/, region);
+}
+</script>
 {% endblock %}

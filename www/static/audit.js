@@ -1,76 +1,114 @@
-var map1, map2, marker1, marker2, smarker1, smarker2, feature, keys, lastView, defaultTitle;
+var map1, map2, marker1, marker2, smarker1, smarker2, feature, keys, lastView, defaultTitle, svButton;
+
+if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(searchString, position){
+      position = position || 0;
+      return this.substr(position, searchString.length) === searchString;
+  };
+}
 
 $(function() {
-  map1 = L.map('map1', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false, attributionControl: false});
-  map2 = L.map('map2', {minZoom: readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
+  map1 = L.map('map1', {minZoom: AP.readonly ? 4 : 15, maxZoom: 19, zoomControl: false, attributionControl: false});
   L.control.permalinkAttribution().addTo(map1);
   map1.attributionControl.setPrefix('');
-  map2.attributionControl.setPrefix('');
-
-  L.control.zoom({position: 'topright'}).addTo(map1);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
-  }).addTo(map1);
-
-  map2.setView([20, 5], 7);
-  var miniLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
-  });
-  var miniMap = new L.Control.MiniMap(miniLayer, {
-    position: 'topright',
-    height: 100,
-    zoomLevelOffset: -6,
-    minimized: true
-  }).addTo(map2);
+  map1.setView([20, 5], 7, {animate: false});
 
   var imageryLayers = {
+    "OSM": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
+    }),
     "Bing": L.bingLayer("AqXL21QURkJrJz4m4-IJn2smkeX5KIYsdhiNIH97boShcUMagCnQPn3JMYZjFEoH", {
       type: "Aerial", maxZoom: 21
     }),
     'Esri': L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: '<a href="https://wiki.openstreetmap.org/wiki/Esri">Terms & Feedback</a>', maxZoom: 22
     }),
-    'DG Std': L.tileLayer("https://{s}.tiles.mapbox.com/v4/digitalglobe.0a8e44ba/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqOGRmNW9qZjBudmgzMnA1a294OGRtNm8ifQ.06mo-nDisy4KmqjYxEVwQw", {
+    'DG Std': L.tileLayer("https://{s}.tiles.mapbox.com/v4/digitalglobe.0a8e44ba/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqZGFrZ3pjczNpaHYycXFyMGo0djY3N2IifQ.90uebT4-ow1uqZKTUrf6RQ", {
       attribution: '<a href="https://wiki.openstreetmap.org/wiki/DigitalGlobe">Terms & Feedback</a>', maxZoom: 22
     }),
-    'DG Pr': L.tileLayer("https://{s}.tiles.mapbox.com/v4/digitalglobe.316c9a2e/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqOGRmNXltOTBucm0yd3BtY3E5czl6NmYifQ.qJJsPgCjyzMCm3YG3YWQBQ", {
+    'DG Pr': L.tileLayer("https://{s}.tiles.mapbox.com/v4/digitalglobe.316c9a2e/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoiZGlnaXRhbGdsb2JlIiwiYSI6ImNqZGFrZ2c2dzFlMWgyd2x0ZHdmMDB6NzYifQ.9Pl3XOO82ArX94fHV289Pg", {
       attribution: '<a href="https://wiki.openstreetmap.org/wiki/DigitalGlobe">Terms & Feedback</a>', maxZoom: 22
     })
   };
-  L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2);
-  imageryLayers['Bing'].addTo(map2);
+  imageryLayers['OSM'].addTo(map1);
 
-  var move = true;
-  map1.on('move', function() {
-    if (move) {
-      move = false;
-      map2.setView(map1.getCenter(), map1.getZoom(), { animate: false });
-      move = true;
-    }
-  });
-  map2.on('move', function() {
-    if (move) {
-      move = false;
-      map1.setView(map2.getCenter(), map2.getZoom(), { animate: false });
-      move = true;
-    }
-  });
+  var miniMap;
+  if ($('#map2').length && $('#map2').is(':visible')) {
+    map2 = L.map('map2', {minZoom: AP.readonly ? 4 : 15, maxZoom: 19, zoomControl: false});
+    map2.attributionControl.setPrefix('');
+    map2.setView([20, 5], 7, {animate: false});
+    var miniLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>', maxZoom: 19
+    });
+    miniMap = new L.Control.MiniMap(miniLayer, {
+      position: 'topright',
+      height: 100,
+      zoomLevelOffset: -6,
+      minimized: true
+    }).addTo(map2);
 
-  if (readonly && features) {
+    delete imageryLayers['OSM'];
+    imageryLayers['Bing'].addTo(map2);
+
+    var move = true;
+    map1.on('move', function() {
+      if (move) {
+        move = false;
+        map2.setView(map1.getCenter(), map1.getZoom(), { animate: false });
+        move = true;
+      }
+    });
+    map2.on('move', function() {
+      if (move) {
+        move = false;
+        map1.setView(map2.getCenter(), map2.getZoom(), { animate: false });
+        move = true;
+      }
+    });
+  }
+
+  if (!$('p.toproject').length) {
+    var ProjectButton = L.Control.extend({
+      onAdd: function() {
+        var container = L.DomUtil.create('div', 'leaflet-bar'),
+            button = L.DomUtil.create('a', '', container);
+        button.href = AP.projectUrl;
+        button.innerHTML = '← to the project';
+        button.style.width = 'auto';
+        button.style.padding = '0 4px';
+        return container;
+      }
+    });
+    map1.addControl(new ProjectButton({ position: 'topleft' }));
+  }
+
+  L.control.zoom({position: map2 ? 'topright' : 'topleft'}).addTo(map1);
+  L.control.layers(imageryLayers, {}, {collapsed: false, position: 'bottomright'}).addTo(map2 || map1);
+  if (map2 && L.streetView) {
+    svOptions = { position: 'bottomright' };
+    if (!AP.proprietarySV)
+      svOptions.google = false;
+    if (AP.mapillaryId)
+      svOptions.mapillaryId = AP.mapillaryId;
+    svButton = L.streetView(svOptions).addTo(map2);
+  }
+  var popups = $('#popup').length > 0;
+
+  if (AP.readonly && features) {
     var fl = L.markerClusterGroup({
           showCoverageOnHover: false,
-          maxClusterRadius: function(zoom) { return zoom < 15 ? 80 : 10; }
+          maxClusterRadius: function(zoom) { return zoom < 15 ? 40 : 10; }
         }),
         iconRed = new L.Icon({
-          iconUrl: imagesPath + '/marker-red.png',
-          shadowUrl: imagesPath + '/marker-shadow.png',
+          iconUrl: AP.imagesPath + '/marker-red.png',
+          shadowUrl: AP.imagesPath + '/marker-shadow.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           shadowSize: [41, 41]
         }),
         iconGreen = new L.Icon({
-          iconUrl: imagesPath + '/marker-green.png',
-          shadowUrl: imagesPath + '/marker-shadow.png',
+          iconUrl: AP.imagesPath + '/marker-green.png',
+          shadowUrl: AP.imagesPath + '/marker-shadow.png',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           shadowSize: [41, 41]
@@ -80,12 +118,21 @@ $(function() {
           icon = action == 'c' ? iconGreen : (action == 'd' ? iconRed : new L.Icon.Default()),
           m = L.marker(features[i][1], {icon: icon});
       m.ref = features[i][0];
-      m.on('click', function(e) {
-        querySpecific(e.target.ref);
-      });
+      if (!popups) {
+        m.on('click', function(e) {
+          querySpecific(e.target.ref);
+        });
+      } else {
+        m.bindPopup('... downloading ...');
+        m.on('popupopen', function(e) {
+          queryForPopup(e.target);
+        });
+        m.on('popupclose', hidePoint);
+      }
       fl.addLayer(m);
     }
     map1.addLayer(fl);
+    map1.fitBounds(fl.getBounds());
   }
 
   defaultTitle = $('#title').html();
@@ -94,21 +141,23 @@ $(function() {
   $('#remarks_box').hide();
   map1.on('zoomend', function() {
     if (map1.getZoom() >= 10) {
-      if (readonly) {
+      if (AP.readonly) {
         $('#zoom_out').show();
         $('#zoom_all').show();
       }
-      miniMap._setDisplay(false);
+      if (miniMap)
+        miniMap._setDisplay(false);
     } else {
-      if (readonly) {
+      if (AP.readonly) {
         hidePoint();
         $('#zoom_out').hide();
         $('#zoom_all').hide();
       }
-      miniMap._setDisplay(true);
+      if (miniMap)
+        miniMap._setDisplay(true);
     }
   });
-  if (readonly) {
+  if (AP.readonly) {
     if ($('#editthis').length)
       $('#editthis').hide();
     $('#zoom_out').click(function() {
@@ -124,12 +173,26 @@ $(function() {
       map1.fitBounds(fl.getBounds());
     });
     $('#random').click(function() { queryNext(); });
-    map1.fitBounds(fl.getBounds());
-    window.addEventListener('popstate', function(e) {
-      querySpecific(e.state);
-    });
-    if (forceRef)
-      querySpecific(forceRef);
+    if (!popups) {
+      window.addEventListener('popstate', function(e) {
+        querySpecific(e.state);
+      });
+    }
+
+    var hash = L.hash ? L.hash(map1) : null;
+    if (AP.forceRef) {
+      if (popups) {
+        fl.eachLayer(function(layer) {
+          if (layer.ref == AP.forceRef) {
+            fl.zoomToShowLayer(layer, function() {
+              layer.openPopup();
+            })
+          }
+        });
+      } else
+        querySpecific(AP.forceRef);
+    } else if (hash)
+      hash.update();
   } else {
     var $rb = $('#reason_box');
     $rb.hide();
@@ -151,17 +214,18 @@ $(function() {
     $('#bad_dup').click({good: false, msg: 'Duplicate'}, submit);
     $('#bad_nosuch').click({good: false, msg: 'Not there'}, submit);
     $('#skip').click({good: true, msg: 'skip'}, submit);
-    if (forceRef)
-      querySpecific(forceRef);
+
+    if (AP.forceRef)
+      querySpecific(AP.forceRef);
     else
       queryNext();
   }
 });
 
 function queryNext(audit) {
-  $.ajax(endpoint + '/feature/' + projectId, {
+  $.ajax(AP.endpoint + '/feature/' + AP.projectId, {
     contentType: 'application/json',
-    data: audit == null ? (readonly ? {browse: 1} : null) : JSON.stringify(audit),
+    data: audit == null ? (AP.readonly ? {browse: 1} : null) : JSON.stringify(audit),
     method: audit ? 'POST' : 'GET',
     dataType: 'json',
     error: function(x,e,h) { window.alert('Ajax error. Please reload the page.\n'+e+'\n'+h); hidePoint(); },
@@ -170,7 +234,7 @@ function queryNext(audit) {
 }
 
 function querySpecific(ref) {
-  $.ajax(endpoint + '/feature/' + projectId, {
+  $.ajax(AP.endpoint + '/feature/' + AP.projectId, {
     contentType: 'application/json',
     data: {ref: ref},
     method: 'GET',
@@ -180,31 +244,43 @@ function querySpecific(ref) {
   });
 }
 
-function displayPoint(data, audit) {
-  if (!data.ref) {
-    window.alert('Received an empty feature. You must have validated all of them.');
-    hidePoint();
-    return;
-  }
+function queryForPopup(target) {
+  if (!target.isPopupOpen())
+    target.openPopup();
 
+  $.ajax(AP.endpoint + '/feature/' + AP.projectId, {
+    contentType: 'application/json',
+    data: {ref: target.ref},
+    method: 'GET',
+    dataType: 'json',
+    error: function(x,e,h) { window.alert('Ajax error. Please reload the page.\n'+e+'\n'+h); },
+    success: function(data) {
+      data.feature.ref = data.ref;
+      displayPoint(data.feature, data.audit || {}, true);
+      if (target.isPopupOpen()) {
+        target.setPopupContent($('#popup').html().replace(/id="[^"]+"/g, ''));
+      } else
+        hidePoint();
+    }
+  });
+}
+
+function setChanged(fast) {
+  var $good = $('#good');
+  if (!fast)
+    $good.text('Record changes');
+  else
+    $good.text($.isEmptyObject(prepareAudit()) ? 'Good' : 'Record changes');
+}
+
+function updateMarkers(data, audit, panMap) {
   var movePos = audit['move'], latlon, rlatlon, rIsOSM = false,
       coord = data['geometry']['coordinates'],
       props = data['properties'],
-      canMove = !readonly && (props['can_move'] || props['action'] == 'create'),
+      canMove = !AP.readonly && (props['can_move'] || props['action'] == 'create'),
       refCoord = props['action'] == 'create' ? coord : props['ref_coords'],
-      wereCoord = props['were_coords'],
-      remarks = props['remarks'];
+      wereCoord = props['were_coords'];
 
-  var $good = $('#good');
-  $good.text('Good');
-  function setChangedFast() {
-    $good.text('Record changes');
-  }
-  function setChanged() {
-    $good.text($.isEmptyObject(prepareAudit()) ? 'Good' : 'Record changes');
-  }
-
-  feature = data;
   if (!movePos || !refCoord || movePos == 'osm') {
     if (movePos == 'osm' && wereCoord)
       latlon = L.latLng(wereCoord[1], wereCoord[0]);
@@ -228,67 +304,51 @@ function displayPoint(data, audit) {
     rIsOSM = !wereCoord && props['action'] != 'create';
   }
 
-  if (marker1) {
+  if (marker1)
     map1.removeLayer(marker1);
-    map2.removeLayer(marker1);
-  }
-  if (marker2) {
-    map1.removeLayer(marker2);
+  if (marker2)
     map2.removeLayer(marker2);
-  }
-  if (smarker1) {
+  if (smarker1)
     map1.removeLayer(smarker1);
-    map2.removeLayer(smarker1);
-  }
-  if (smarker2) {
-    map1.removeLayer(smarker2);
+  if (smarker2)
     map2.removeLayer(smarker2);
-  }
-
-  // Pan the map and draw a marker
-  if (readonly) {
-    var $editThis = $('#editthis'),
-        lastView = [map1.getCenter(), map1.getZoom()];
-    if (history.state != data.ref) {
-      history.pushState(data.ref, data.ref + ' — ' + document.title,
-        browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-    }
-    if ($editThis.length) {
-      $('#editlink').attr('href', featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-      $editThis.show();
-    }
-  } else {
-    history.replaceState(data.ref, data.ref + ' — ' + document.title,
-      featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-    $('#browselink').attr('href', browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
-  }
 
   $('#hint').show();
   if (rlatlon && (props['action'] != 'create' || movePos)) {
     var smTitle = rIsOSM ? 'OSM location' : 'External dataset location';
     smarker1 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map1);
-    smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
+    if (map2)
+      smarker2 = L.marker(rlatlon, {opacity: 0.4, title: smTitle, zIndexOffset: -100}).addTo(map2);
     $('#tr_which').text(rIsOSM ? 'OpenStreetMap' : 'external dataset');
     $('#transparent').show();
-    map1.fitBounds([latlon, rlatlon], {maxZoom: 18});
+    if (panMap)
+      map1.fitBounds([latlon, rlatlon], {maxZoom: 18});
   } else {
     $('#transparent').hide();
-    map1.setView(latlon, 18);
+    if (panMap)
+      map1.setView(latlon, 18);
   }
+
+  if (svButton)
+    svButton.fixCoord(latlon);
+
   var mTitle = rIsOSM ? 'New location after moving' : 'OSM object location',
       iconGreen = new L.Icon({
-        iconUrl: imagesPath + '/marker-green.png',
-        shadowUrl: imagesPath + '/marker-shadow.png',
+        iconUrl: AP.imagesPath + '/marker-green.png',
+        shadowUrl: AP.imagesPath + '/marker-shadow.png',
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         shadowSize: [41, 41]
       }),
       mIcon = canMove ? iconGreen : new L.Icon.Default();
-  marker2 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map2);
-  if (!readonly) {
+  if (map2)
+    marker2 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map2);
+  if (!AP.readonly) {
     marker1 = L.marker(latlon, {draggable: canMove, title: mTitle, icon: mIcon}).addTo(map1);
 
     if (canMove) {
+      $('#canmove').show();
+
       var guideLayer = L.layerGroup();
       L.marker(latlon).addTo(guideLayer);
       L.marker(rlatlon).addTo(guideLayer);
@@ -298,40 +358,72 @@ function displayPoint(data, audit) {
       marker1.snapediting = new L.Handler.MarkerSnap(map1, marker1, {snapDistance: 8});
       marker1.snapediting.addGuideLayer(guideLayer);
       marker1.snapediting.enable();
-      marker2.snapediting = new L.Handler.MarkerSnap(map2, marker2, {snapDistance: 8});
-      marker2.snapediting.addGuideLayer(guideLayer);
-      marker2.snapediting.enable();
 
-      $('#canmove').show();
-      var move = true;
-      marker1.on('move', function () {
-        if (move) {
-          move = false;
-          marker2.setLatLng(marker1.getLatLng());
-          move = true;
-        }
-      });
-      marker2.on('move', function () {
-        if (move) {
-          move = false;
-          marker1.setLatLng(marker2.getLatLng());
-          move = true;
-        }
-      });
       marker1.on('dragend', function() {
         map1.panTo(marker1.getLatLng());
         setChanged();
       });
-      marker2.on('dragend', function() {
-        map1.panTo(marker2.getLatLng());
-        setChanged();
-      });
+
+      if (marker2) {
+        marker2.snapediting = new L.Handler.MarkerSnap(map2, marker2, {snapDistance: 8});
+        marker2.snapediting.addGuideLayer(guideLayer);
+        marker2.snapediting.enable();
+
+        var move = true;
+        marker1.on('move', function () {
+          if (move) {
+            move = false;
+            marker2.setLatLng(marker1.getLatLng());
+            move = true;
+          }
+        });
+        marker2.on('move', function () {
+          if (move) {
+            move = false;
+            marker1.setLatLng(marker2.getLatLng());
+            move = true;
+          }
+        });
+        marker2.on('dragend', function() {
+          map1.panTo(marker2.getLatLng());
+          setChanged();
+        });
+      }
     } else {
       $('#canmove').hide();
     }
   }
+}
 
-  // Fill in the left panel
+function saveHistoryState(ref) {
+  if (AP.readonly) {
+    if (history.state != ref) {
+      history.pushState(ref, ref + ' — ' + document.title,
+        AP.browseTemplateUrl.replace('tmpl', encodeURIComponent(ref)));
+    }
+  } else {
+    history.replaceState(ref, ref + ' — ' + document.title,
+      AP.featureTemplateUrl.replace('tmpl', encodeURIComponent(ref)));
+  }
+}
+
+function prepareSidebar(data, audit) {
+  var ref = data.ref, props = data['properties'],
+      remarks = props['remarks'];
+
+  $('#good').text('Good');
+
+  if (AP.readonly) {
+    var $editThis = $('#editthis');
+    if (map1.getZoom() <= 15)
+      lastView = [map1.getCenter(), map1.getZoom()];
+    if ($editThis.length) {
+      $('#editlink').attr('href', AP.featureTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+      $editThis.show();
+    }
+  } else {
+    $('#browselink').attr('href', AP.browseTemplateUrl.replace('tmpl', encodeURIComponent(data.ref)));
+  }
 
   function formatObjectRef(props) {
     return ' a <a href="https://www.openstreetmap.org/' +
@@ -353,7 +445,7 @@ function displayPoint(data, audit) {
   $('#title').html(title);
 
   $('#buttons button').each(function() { $(this).prop('disabled', false); });
-  if (readonly) {
+  if (AP.readonly) {
     // TODO: show or hide "zoom" buttons depending on selected feature
   } else if (props['action'] == 'create') {
     $('#bad').hide();
@@ -369,10 +461,10 @@ function displayPoint(data, audit) {
     $('#good').focus();
   }
 
-  if (!readonly) {
+  if (!AP.readonly) {
     $('#fixme_box').show();
     $('#fixme').val(audit['fixme'] || '');
-    $('#fixme').on('input', setChangedFast);
+    $('#fixme').on('input', function() { setChanged(true); });
     $('#reason').val(audit['comment'] || '');
   }
 
@@ -388,6 +480,18 @@ function displayPoint(data, audit) {
     $('#last_action').hide();
   }
 
+  // render remarks, if any.
+  if (remarks) {
+    $('#remarks_box').show();
+    $('#remarks_content').text(remarks);
+  } else {
+    $('#remarks_box').hide();
+  }
+}
+
+function renderTagTable(data, audit, editNewTags) {
+  var props = data['properties'];
+
   // Table of tags. First record the original values for unused tags
   var original = {};
   for (var key in props)
@@ -400,7 +504,7 @@ function displayPoint(data, audit) {
   for (var key in props) {
     if (key.startsWith('tags') || key.startsWith('ref_unused_tags')) {
       k = key.substr(key.indexOf('.')+1);
-      if (!readonly && (k == 'source' || k.startsWith('ref') || k == 'fixme') && !key.startsWith('ref_unused')) {
+      if (!AP.readonly && (k == 'source' || k.startsWith('ref') || k == 'fixme') && !key.startsWith('ref_unused')) {
         if (k == 'fixme')
           $('#fixme').val(props[key]);
         keys.push([k, props[key]]);
@@ -417,7 +521,7 @@ function displayPoint(data, audit) {
         var i = props[key].indexOf(' -> ');
         keys.push([k, props[key].substr(0, i), props[key].substr(i+4), true]);
       } else if (key.startsWith('tags.')) {
-        if (props['action'] == 'create')
+        if (editNewTags && props['action'] == 'create')
           keys.push([k, '', props[key], true]);
         else if (!skip[k])
           keys.push([k, props[key]]);
@@ -435,14 +539,6 @@ function displayPoint(data, audit) {
       else
         keys[i].push(keys[i][3]);
     }
-  }
-
-  // render remarks, if any. 
-  if (remarks) {
-    $('#remarks_box').show(); 
-    $('#remarks_content').text(remarks);
-  } else {
-    $('#remarks_box').hide();
   }
 
   // Render the table
@@ -494,7 +590,7 @@ function displayPoint(data, audit) {
       $radio.prop('checked', true);
       $(this).addClass(cellColor(row, which));
     }
-    if (readonly)
+    if (AP.readonly)
       $radio.hide();
     else {
       $(this).click(function() {
@@ -509,6 +605,20 @@ function displayPoint(data, audit) {
   });
 }
 
+function displayPoint(data, audit, forPopup) {
+  if (!data.ref) {
+    window.alert('Received an empty feature. You must have validated all of them.');
+    hidePoint();
+    return;
+  }
+  feature = data;
+  if (!forPopup)
+    saveHistoryState(data.ref);
+  updateMarkers(data, audit, !forPopup);
+  prepareSidebar(data, audit);
+  renderTagTable(data, audit, !forPopup);
+}
+
 function hidePoint() {
   $('#tags').empty();
   $('#hint').hide();
@@ -516,18 +626,14 @@ function hidePoint() {
   $('#fixme_box').hide();
   $('#remarks_box').hide();
   $('#title').html(defaultTitle);
-  if (marker2) {
-    map1.removeLayer(marker2);
+  if (marker2)
     map2.removeLayer(marker2);
-  }
-  if (smarker1) {
+  if (smarker1)
     map1.removeLayer(smarker1);
-    map2.removeLayer(smarker1);
-  }
-  if (smarker2) {
-    map1.removeLayer(smarker2);
+  if (smarker2)
     map2.removeLayer(smarker2);
-  }
+  if (svButton)
+    svButton.releaseCoord();
 }
 
 function prepareAudit(data) {

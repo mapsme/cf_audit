@@ -10,11 +10,12 @@ ADMINS = os.environ.get('ADMINS')
 if ADMINS:
     ADMINS = set([int(adm_id) for adm_id in ADMINS.split(',')])
 
-# Override these (and anything else) in config_local.py or 
-# set environment variable accordingly.
-OAUTH_KEY = os.environ.get('OAUTH_KEY')
-OAUTH_SECRET = os.environ.get('OAUTH_SECRET')
-SECRET_KEY = os.environ.get('SECRET_KEY')
+# Override these (and anything else) in config_local.py or
+# set environment variables accordingly.
+OAUTH_KEY = os.environ.get('OAUTH_KEY', '')
+OAUTH_SECRET = os.environ.get('OAUTH_SECRET', '')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'sdkjfhsfljhsadf')
+MAPILLARY_CLIENT_ID = os.environ.get('MAPILLARY_CLIENT_ID', '')
 
 try:
     from config_local import *

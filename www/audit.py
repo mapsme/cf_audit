@@ -1,13 +1,13 @@
 from www import app
 from .db import database, User, Feature, Project, Task, fn_Random
+from .util import update_features, update_audit, update_features_cache
 from flask import session, url_for, redirect, request, render_template, flash, jsonify
 from flask_oauthlib.client import OAuth
-from peewee import fn
+from peewee import fn, OperationalError
 import json
 import config
 import codecs
 import datetime
-import hashlib
 import math
 import os
 
@@ -79,6 +79,11 @@ def front():
                            admin=is_admin(user), is_admin=local_is_admin)
 
 
+@app.route('/robots.txt')
+def robots():
+    return app.response_class('User-agent: *\nDisallow: /', mimetype='text/plain')
+
+
 @app.route('/login')
 def login():
     if 'osm_token' not in session:
@@ -131,23 +136,44 @@ def logout():
 
 
 @app.route('/project/<name>')
-def project(name):
+@app.route('/project/<name>/')
+@app.route('/project/<name>/<region>')
+def project(name, region=None):
     project = Project.get(Project.name == name)
     desc = project.description.replace('\n', '<br>')
-    cnt = project.feature_count
+    cnt = Feature.select(Feature.id).where(Feature.project == project)
     val1 = Feature.select(Feature.id).where(Feature.project == project,
                                             Feature.validates_count > 0)
     val2 = Feature.select(Feature.id).where(Feature.project == project,
                                             Feature.validates_count >= 2)
+    corrected = Feature.select(Feature.id).where(
+        Feature.project == project, Feature.audit.is_null(False), Feature.audit != '')
+    skipped = Feature.select(Feature.id).where(
+        Feature.project == project, Feature.audit.contains('"skip": true'))
+
+    if region is not None:
+        val1 = val1.where(Feature.region == region)
+        val2 = val2.where(Feature.region == region)
+        cnt = cnt.where(Feature.region == region)
+        corrected = corrected.where(Feature.region == region)
+        skipped = skipped.where(Feature.region == region)
     if project.validate_modified:
         val1 = val1.where(Feature.action == 'm')
         val2 = val2.where(Feature.action == 'm')
-        cnt = Feature.select(Feature.id).where(Feature.project == project,
-                                               Feature.action == 'm').count()
-    corrected = Feature.select(Feature.id).where(
-        Feature.project == project, Feature.audit.is_null(False), Feature.audit != '').count()
-    skipped = Feature.select(Feature.id).where(
-        Feature.project == project, Feature.audit.contains('"skip": true')).count()
+        cnt = cnt.where(Feature.action == 'm')
+
+    regions = []
+    if project.regional:
+        regions = Feature.select(
+            Feature.region, fn.Count(),
+            fn.Sum(fn.Min(Feature.validates_count, 1))).where(
+                Feature.project == project).group_by(
+                Feature.region).order_by(Feature.region).tuples()
+        if len(regions) == 1:
+            regions = []
+        else:
+            regions = [(None, cnt.count(), val1.count())] + list(regions)
+
     user = get_user()
     if user:
         has_skipped = Task.select().join(Feature).where(
@@ -155,35 +181,43 @@ def project(name):
     else:
         has_skipped = False
     return render_template('project.html', project=project, admin=is_admin(user, project),
-                           count=cnt, desc=desc, val1=val1.count(), val2=val2.count(),
-                           corrected=corrected, skipped=skipped,
-                           has_skipped=has_skipped)
+                           count=cnt.count(), desc=desc, val1=val1.count(), val2=val2.count(),
+                           corrected=corrected.count(), skipped=skipped.count(),
+                           has_skipped=has_skipped, region=region, regions=regions)
 
 
 @app.route('/browse/<name>')
 @app.route('/browse/<name>/<ref>')
-def browse(name, ref=None):
+def browse(name, ref=None, region=None):
     project = Project.get(Project.name == name)
-    query = Feature.select().where(Feature.project == project)
-    features = []
-    for f in query:
-        features.append([f.ref, f.lon, f.lat, f.action])
-    return render_template('browse.html', project=project, features=features, ref=ref)
+    region = request.args.get('region')
+    return render_template('browse.html', project=project, ref=ref, region=region,
+                           mapillary_id=config.MAPILLARY_CLIENT_ID)
+
+
+@app.route('/map/<name>')
+@app.route('/map/<name>/<ref>')
+def show_map(name, ref=None, region=None):
+    project = Project.get(Project.name == name)
+    region = request.args.get('region')
+    return render_template('map.html', project=project, ref=ref, region=region)
 
 
 @app.route('/run/<name>')
 @app.route('/run/<name>/<ref>')
-def tasks(name, ref=None):
+def tasks(name, ref=None, region=None):
     if not get_user():
         return redirect(url_for('login', next=request.path))
     project = Project.get(Project.name == name)
+    region = request.args.get('region')
     if not project.can_validate:
         if ref:
             return redirect(url_for('browse', name=name, ref=ref))
         else:
             flash('Project validation is disabled')
             return redirect(url_for('project', name=name))
-    return render_template('task.html', project=project, ref=ref)
+    return render_template('task.html', project=project, ref=ref, region=region,
+                           mapillary_id=config.MAPILLARY_CLIENT_ID)
 
 
 # Lifted from http://flask.pocoo.org/snippets/44/
@@ -231,11 +265,14 @@ app.jinja_env.globals['url_for_other_page'] = url_for_other_page
 def table(name, page):
     PER_PAGE = 200
     project = Project.get(Project.name == name)
+    region = request.args.get('region')
     query = Feature.select().where(Feature.project == project).order_by(
         Feature.id).paginate(page, PER_PAGE)
     show_validated = request.args.get('all') == '1'
     if not show_validated:
         query = query.where(Feature.validates_count < 2)
+    if region:
+        query = query.where(Feature.region == region)
     pagination = Pagination(page, PER_PAGE, query.count(True))
     columns = set()
     features = []
@@ -308,83 +345,6 @@ def add_project(pid=None):
     return render_template('newproject.html', project=project)
 
 
-def update_features(project, features, audit):
-    curfeats = Feature.select(Feature).where(Feature.project == project)
-    ref2feat = {f.ref: f for f in curfeats}
-    deleted = set(ref2feat.keys())
-    minlat = minlon = 180.0
-    maxlat = maxlon = -180.0
-    for f in features:
-        data = json.dumps(f, ensure_ascii=False, sort_keys=True)
-        md5 = hashlib.md5()
-        md5.update(data.encode('utf-8'))
-        md5_hex = md5.hexdigest()
-
-        coord = f['geometry']['coordinates']
-        if coord[0] < minlon:
-            minlon = coord[0]
-        if coord[0] > maxlon:
-            maxlon = coord[0]
-        if coord[1] < minlat:
-            minlat = coord[1]
-        if coord[1] > maxlat:
-            maxlat = coord[1]
-
-        if 'ref_id' in f['properties']:
-            ref = f['properties']['ref_id']
-        else:
-            ref = '{}{}'.format(f['properties']['osm_type'], f['properties']['osm_id'])
-
-        update = False
-        if ref in ref2feat:
-            deleted.remove(ref)
-            feat = ref2feat[ref]
-            if feat.feature_md5 != md5_hex:
-                update = True
-        else:
-            feat = Feature(project=project, ref=ref)
-            feat.validates_count = 0
-            update = True
-
-        f_audit = audit.get(ref)
-        if f_audit:
-            f_audit = json.dumps(f_audit, ensure_ascii=False, sort_keys=True)
-            if f_audit != feat.audit:
-                feat.audit = f_audit
-                update = True
-
-        if update:
-            feat.feature = data
-            feat.feature_md5 = md5_hex
-            feat.lon = round(coord[0] * 1e7)
-            feat.lat = round(coord[1] * 1e7)
-            feat.action = f['properties']['action'][0]
-            if feat.validates_count > 0:
-                feat.validates_count = 0
-                Task.delete().where(Task.feature == feat).execute()
-            feat.save()
-
-    if deleted:
-        q = Feature.delete().where(Feature.ref << list(deleted))
-        q.execute()
-    project.bbox = ','.join([str(x) for x in (minlon, minlat, maxlon, maxlat)])
-    project.feature_count = Feature.select().where(Feature.project == project).count()
-    project.save()
-
-
-def update_audit(project):
-    audit = json.loads(project.audit or '{}')
-    changed = False
-    query = Feature.select(Feature.ref, Feature.audit).where(
-        Feature.project == project, Feature.audit.is_null(False)).tuples()
-    for feat in query:
-        if feat[1]:
-            changed = True
-            audit[feat[0]] = json.loads(feat[1])
-    if changed:
-        project.audit = json.dumps(audit, ensure_ascii=False)
-
-
 @app.route('/newproject/upload', methods=['POST'])
 def upload_project():
     def add_flash(pid, msg):
@@ -407,6 +367,7 @@ def upload_project():
         project.feature_count = 0
         project.bbox = ''
         project.owner = user
+        project.regional = True
     project.name = request.form['name'].strip()
     if not project.name:
         return add_flash(pid, 'Empty name - bad')
@@ -420,6 +381,8 @@ def upload_project():
     project.can_validate = request.form.get('validate') is not None
     project.validate_modified = request.form.get('validate_modified') is not None
     project.hidden = request.form.get('is_hidden') is not None
+    project.regional = request.form.get('regional') is not None
+    project.prop_sv = request.form.get('prop_sv') is not None
 
     if 'json' not in request.files or request.files['json'].filename == '':
         if not pid:
@@ -451,13 +414,13 @@ def upload_project():
         project.updated = datetime.datetime.utcnow().date()
     project.save()
 
-    if features:
+    if features or audit:
         with database.atomic():
             update_features(project, features, proj_audit)
 
-    if project.feature_count == 0:
+    if project.feature_count == 0 and not pid:
         project.delete_instance()
-        return add_flash('Zero features in the JSON file')
+        return add_flash(pid, 'Zero features in the JSON file')
 
     return redirect(url_for('project', name=project.name))
 
@@ -489,10 +452,13 @@ def export_audit(pid):
     project = Project.get(Project.id == pid)
     if not is_admin(get_user(), project):
         return redirect(url_for('front'))
-    update_audit(project)
-    project.save()
+    audit = update_audit(project)
+    try:
+        project.save()
+    except OperationalError:
+        pass
     return app.response_class(
-        project.audit or '{}', mimetype='application/json',
+        audit or '{}', mimetype='application/json',
         headers={'Content-Disposition': 'attachment;filename=audit_{}.json'.format(project.name)})
 
 
@@ -572,15 +538,28 @@ def api():
     return 'API Endpoint'
 
 
-@app.route('/api/features/<int:pid>')
+@app.route('/api/features/<int:pid>.js')
 def all_features(pid):
     project = Project.get(Project.id == pid)
-    query = Feature.select().where(Feature.project == project)
-    features = []
-    for f in query:
-        features.append([f.ref, [f.lat/1e7, f.lon/1e7], f.action])
-    return app.response_class('features = {}'.format(json.dumps(
-        features, ensure_ascii=False).encode('utf-8')), mimetype='application/javascript')
+    region = request.args.get('region')
+    if region:
+        query = Feature.select(Feature.ref, Feature.lat, Feature.lon, Feature.action).where(
+                Feature.project == project, Feature.region == region).tuples()
+        features = []
+        for ref, lat, lon, action in query:
+            features.append([ref, [lat/1e7, lon/1e7], action])
+        features_js = json.dumps(features, ensure_ascii=False)
+    else:
+        if not project.features_js:
+            update_features_cache(project)
+            try:
+                project.save()
+            except OperationalError:
+                # Sometimes wait is too long and MySQL disappears
+                pass
+        features_js = project.features_js
+    return app.response_class('features = {}'.format(features_js),
+                              mimetype='application/javascript')
 
 
 class BBoxes(object):
@@ -625,20 +604,26 @@ def api_feature(pid):
                 elif not user_did_it:
                     feat.validates_count += 1
                 feat.save()
+    region = request.args.get('region')
     fref = request.args.get('ref')
     if fref:
         feature = Feature.get(Feature.project == project, Feature.ref == fref)
     elif not user or request.args.get('browse') == '1':
-        feature = Feature.select().where(Feature.project == project).order_by(fn_Random()).get()
+        query = Feature.select().where(Feature.project == project)
+        if region:
+            query = query.where(Feature.region == region)
+        feature = query.order_by(fn_Random()).get()
     else:
         try:
             # Maybe use a join: https://stackoverflow.com/a/35927141/1297601
             task_query = Task.select(Task.id).where(Task.user == user, Task.feature == Feature.id)
             query = Feature.select().where(
                 Feature.project == project, Feature.validates_count < 2).where(
-                    ~fn.EXISTS(task_query)).order_by(fn_Random())
+                    ~fn.EXISTS(task_query)).order_by(Feature.validates_count, fn_Random())
             if project.validate_modified:
                 query = query.where(Feature.action == 'm')
+            if region:
+                query = query.where(Feature.region == region)
             if user.bboxes:
                 bboxes = BBoxes(user)
                 feature = None
