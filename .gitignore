@@ -9,3 +9,4 @@ config_local.py
 *.backup
 *.sql
 *.gz
+.env

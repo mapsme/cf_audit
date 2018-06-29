@@ -1,0 +1,27 @@
+version: '3.4'
+services:
+  cf-audit: &auditor
+    build: .
+    environment:
+      # uncomment following line to enable debugging
+      # DEBUG: yes
+      DATABASE_URI: 'postgresql://cf_audit:pw@database:5432/cf_audit'
+      # enter the osm-ids here, which should get admin-rights.
+      ADMINS: ''
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - database
+  migrate:
+    <<: *auditor
+    command: python migrate.py
+    ports: []
+  database:
+    image: postgres:10
+    environment:
+      POSTGRES_USER: cf_audit
+      POSTGRES_PASSWORD: pw
+      POSTGRES_DB: cf_audit
+
